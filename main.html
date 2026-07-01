@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOBERTO-XD — WhatsApp Bot Platform</title>
+<meta name="description" content="Konekte bot WhatsApp ou an kèk segond ak DOBERTO-XD — miltisesyon, otomatik, gratis.">
+
+<style>
+  :root{
+    --bg: #0a0c11;
+    --surface: #12151d;
+    --surface-2: #171b25;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.16);
+    --text: #f2f4f8;
+    --text-dim: #97a0b0;
+    --text-faint: #5c6474;
+    --accent: #25d366;
+    --accent-dim: rgba(37,211,102,0.14);
+    --blue: #4fc3f7;
+    --blue-dim: rgba(79,195,247,0.14);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    min-height: 100vh;
+    background:
+      radial-gradient(1000px 520px at 12% -10%, rgba(37,211,102,0.10), transparent),
+      radial-gradient(900px 520px at 100% 0%, rgba(79,195,247,0.08), transparent),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(10,12,17,0.85);
+    backdrop-filter: blur(10px);
+    z-index: 50;
+  }
+
+  .hamburger{
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+  .hamburger:hover{ border-color: var(--border-strong); }
+  .hamburger svg{ width: 20px; height: 20px; }
+
+  .brand-mini{ display: flex; align-items: center; gap: 10px; }
+  .brand-mini .logo{
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(37,211,102,0.3);
+    display: grid; place-items: center;
+    font-size: 17px;
+  }
+  .brand-mini .name{ font-weight: 800; font-size: 15.5px; letter-spacing: -0.2px; }
+  .brand-mini .name span{ color: var(--accent); }
+
+  /* ---------- drawer / sidebar ---------- */
+  .overlay{
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s;
+    z-index: 90;
+  }
+  .overlay.open{ opacity: 1; pointer-events: auto; }
+
+  .drawer{
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: min(82vw, 320px);
+    background: linear-gradient(180deg, var(--surface), var(--bg));
+    border-right: 1px solid var(--border);
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.4,0,.2,1);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding: 26px 20px;
+  }
+  .drawer.open{ transform: translateX(0); }
+
+  .drawer-brand{ display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
+  .drawer-brand .logo{
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(37,211,102,0.3);
+    display: grid; place-items: center;
+    font-size: 22px;
+  }
+  .drawer-brand .name{ font-weight: 800; font-size: 17px; }
+  .drawer-brand .sub{ font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
+
+  .drawer-label{
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-faint);
+    margin: 18px 4px 10px;
+  }
+
+  .drawer a{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14.5px;
+    transition: all .2s;
+  }
+  .drawer a:hover{ background: var(--surface-2); color: var(--text); }
+  .drawer a.active{ background: var(--accent-dim); color: var(--accent); }
+  .drawer a .ic{ width: 20px; text-align: center; font-size: 16px; }
+
+  .drawer-footer{
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 56px 24px 30px;
+    text-align: center;
+  }
+
+  .badge{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 26px;
+  }
+  .badge .dot{
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .hero h1{
+    font-size: 40px;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    color: var(--text);
+  }
+  .hero h1 .grad{
+    background: linear-gradient(120deg, var(--accent), var(--blue));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hero p{
+    margin-top: 18px;
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .hero-actions{
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px 20px;
+    border-radius: 13px;
+    font-weight: 800;
+    font-size: 15px;
+    text-decoration: none;
+    transition: transform .15s, box-shadow .15s, border-color .15s;
+    border: 1px solid transparent;
+  }
+  .btn:active{ transform: translateY(1px); }
+
+  .btn-primary{
+    background: linear-gradient(135deg, var(--accent), #1eab54);
+    color: #062411;
+    box-shadow: 0 12px 28px rgba(37,211,102,0.24);
+  }
+  .btn-primary:hover{ box-shadow: 0 16px 34px rgba(37,211,102,0.32); }
+
+  .btn-ghost{
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+  .btn-ghost:hover{ border-color: var(--blue); background: var(--surface-2); }
+
+  /* ---------- stats ---------- */
+  .stats{
+    max-width: 640px;
+    margin: 40px auto 0;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .stat{
+    background: linear-gradient(180deg, var(--surface), var(--surface-2));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 10px;
+    text-align: center;
+  }
+
+  .stat .value{
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .stat .value.live::after{
+    content: "";
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-left: 6px;
+    vertical-align: middle;
+    box-shadow: 0 0 6px var(--accent);
+    animation: pulse 1.6s infinite;
+  }
+  @keyframes pulse{ 0%,100%{ opacity: 1; } 50%{ opacity: .3; } }
+
+  .stat .label{
+    margin-top: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-faint);
+  }
+
+  /* ---------- free forever ---------- */
+  .free{
+    text-align: center;
+    margin: 46px auto 10px;
+  }
+  .free .big{ font-size: 26px; font-weight: 900; color: var(--accent); }
+  .free .small{ font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 1.4px; margin-top: 2px; }
+
+  /* ---------- features ---------- */
+  .features{
+    max-width: 640px;
+    margin: 46px auto 0;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .feature{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .feature .ic{
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: var(--blue-dim);
+    display: grid; place-items: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .feature h3{ font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .feature p{ font-size: 12.5px; color: var(--text-faint); line-height: 1.5; }
+
+  /* ---------- footer ---------- */
+  footer{
+    text-align: center;
+    padding: 50px 24px 40px;
+    color: var(--text-faint);
+    font-size: 11.5px;
+  }
+
+  @media (min-width: 480px){
+    .hero-actions{ flex-direction: row; justify-content: center; }
+    .btn{ flex: 1; max-width: 220px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="hamburger" id="openDrawer" aria-label="Louvri meni">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+  </button>
+  <div class="brand-mini">
+    <div class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.1" fill="currentColor" stroke="none"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/></svg></div>
+    <div class="name">DOBERTO<span>-XD</span></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<nav class="drawer" id="drawer">
+  <div class="drawer-brand">
+    <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="2"/><circle cx="9" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.1" fill="currentColor" stroke="none"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/></svg></div>
+    <div>
+      <div class="name">DOBERTO-XD</div>
+      <div class="sub">WhatsApp Bot Platform</div>
+    </div>
+  </div>
+
+  <div class="drawer-label">Navigation</div>
+  <a href="/" class="active"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg></span> Akèy</a>
+  <a href="/pair"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M6 8h12v3a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8z"/><path d="M12 17v5"/></svg></span> Konekte Bot</a>
+  <a href="/dashboard"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg></span> Admin Panel</a>
+
+  <div class="drawer-label">Resources</div>
+  <a href="https://github.com/Doberto555" target="_blank" rel="noopener"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.79-.25.79-.55 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.64 1.59.24 2.76.12 3.05.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14 0 1.55-.01 2.79-.01 3.17 0 .31.21.66.8.55A11.5 11.5 0 0 0 23.5 12c0-6.27-5.23-11.5-11.5-11.5z"/></svg></span> GitHub — Doberto555</a>
+  <a href="https://whatsapp.com/channel/0029VbCRDyv0AgWL847SQ419" target="_blank" rel="noopener"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span> Chanèl Sipò WhatsApp</a>
+
+  <div class="drawer-footer">© 2026 DOBERTO X Team Community. Tout dwa rezève.</div>
+</nav>
+
+<div class="hero">
+  <div class="badge"><span class="dot"></span> Bot WhatsApp Gratis</div>
+  <h1>Platfòm bot <span class="grad">WhatsApp</span> ki pi solid la</h1>
+  <p>Konekte nimewo ou an kèk segond. Miltisesyon, fonksyon otomatik, jesyon gwoup, ak plis ankò — tout nan yon sèl bot gratis.</p>
+
+  <div class="hero-actions">
+    <a href="/pair" class="btn btn-primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Konekte Bot Ou</a>
+    <a href="/dashboard" class="btn btn-ghost"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg> Admin Panel</a>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <div class="value live" id="statActive">—</div>
+    <div class="label">Sesyon Aktif</div>
+  </div>
+  <div class="stat">
+    <div class="value" id="statTotal">—</div>
+    <div class="label">Total Sesyon</div>
+  </div>
+  <div class="stat">
+    <div class="value" id="statStatus">—</div>
+    <div class="label">Estati Bot</div>
+  </div>
+</div>
+
+<div class="free">
+  <div class="big">Gratis</div>
+  <div class="small">Pou Tout Tan</div>
+</div>
+
+<div class="features">
+  <div class="feature">
+    <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+    <div>
+      <h3>Koneksyon Rapid</h3>
+      <p>Jwenn kòd pairing ou an mwens pase 10 segond, san bezwen skane QR code.</p>
+    </div>
+  </div>
+  <div class="feature">
+    <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+    <div>
+      <h3>Miltisesyon</h3>
+      <p>Konekte plizyè nimewo an menm tan epi jere yo tout nan yon sèl dashboard.</p>
+    </div>
+  </div>
+  <div class="feature">
+    <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/></svg></div>
+    <div>
+      <h3>Kontwòl Total</h3>
+      <p>Admin panel pou wè, konfigire, oswa retire nenpòt sesyon nenpòt lè.</p>
+    </div>
+  </div>
+</div>
+
+<footer>Devlope pa DOBERTO X Team Community · © 2026</footer>
+
+<script>
+  const drawer = document.getElementById('drawer');
+  const overlay = document.getElementById('overlay');
+  const openBtn = document.getElementById('openDrawer');
+
+  function openDrawer(){ drawer.classList.add('open'); overlay.classList.add('open'); }
+  function closeDrawer(){ drawer.classList.remove('open'); overlay.classList.remove('open'); }
+
+  openBtn.addEventListener('click', openDrawer);
+  overlay.addEventListener('click', closeDrawer);
+
+  async function loadStats(){
+    try{
+      const activeRes = await fetch('/active');
+      const activeData = await activeRes.json();
+      document.getElementById('statActive').textContent = activeData.count ?? 0;
+      document.getElementById('statTotal').textContent = activeData.count ?? 0;
+
+      const pingRes = await fetch('/ping');
+      const pingData = await pingRes.json();
+      document.getElementById('statStatus').textContent = pingData.status === 'active' ? 'Online' : 'Offline';
+    }catch(e){
+      document.getElementById('statActive').textContent = '0';
+      document.getElementById('statTotal').textContent = '0';
+      document.getElementById('statStatus').textContent = 'Offline';
+    }
+  }
+
+  loadStats();
+  setInterval(loadStats, 10000);
+</script>
+
+</body>
+</html>
