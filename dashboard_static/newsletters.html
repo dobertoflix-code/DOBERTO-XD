@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Newsletters - DOBERTO-XD</title>
+    <link rel="stylesheet" href="/dashboard/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-link">← Retour au Dashboard</a>
+        <h1>📬 Gestion des Newsletters</h1>
+        
+        <div id="content">
+            <div class="loading">Chargement des newsletters...</div>
+        </div>
+
+        <table id="newsletterTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>JID</th>
+                    <th>Emojis</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="newsletterList"></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function loadNewsletters() {
+            try {
+                const response = await fetch('/api/newsletters');
+                const data = await response.json();
+                
+                if (data.ok && data.list) {
+                    const table = document.getElementById('newsletterTable');
+                    const tbody = document.getElementById('newsletterList');
+                    const content = document.getElementById('content');
+                    
+                    if (data.list.length === 0) {
+                        content.innerHTML = '<div class="error">Aucune newsletter trouvée</div>';
+                        return;
+                    }
+                    
+                    tbody.innerHTML = '';
+                    data.list.forEach(news => {
+                        const row = tbody.insertRow();
+                        
+                        // JID cell
+                        const jidCell = row.insertCell();
+                        jidCell.textContent = news.jid || news;
+                        
+                        // Emojis cell
+                        const emojiCell = row.insertCell();
+                        const emojis = news.emojis || [];
+                        const emojiDiv = document.createElement('div');
+                        emojiDiv.className = 'emoji-list';
+                        emojis.forEach(emoji => {
+                            const span = document.createElement('span');
+                            span.className = 'emoji-badge';
+                            span.textContent = emoji;
+                            emojiDiv.appendChild(span);
+                        });
+                        emojiCell.appendChild(emojiDiv);
+                        
+                        // Actions cell
+                        const actionCell = row.insertCell();
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'btn-delete';
+                        deleteBtn.textContent = 'Supprimer';
+                        deleteBtn.onclick = () => deleteNewsletter(news.jid || news);
+                        actionCell.appendChild(deleteBtn);
+                    });
+                    
+                    table.style.display = 'table';
+                    content.style.display = 'none';
+                }
+            } catch (error) {
+                document.getElementById('content').innerHTML = 
+                    '<div class="error">Erreur de chargement: ' + error.message + '</div>';
+            }
+        }
+
+        async function deleteNewsletter(jid) {
+            if (!confirm(`Supprimer la newsletter ${jid} ?`)) return;
+            
+            try {
+                const response = await fetch('/newsletter/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ jid })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Newsletter supprimée avec succès');
+                    loadNewsletters();
+                } else {
+                    alert('Erreur: ' + data.error);
+                }
+            } catch (error) {
+                alert('Erreur: ' + error.message);
+            }
+        }
+
+        loadNewsletters();
+    </script>
+</body>
+</html>

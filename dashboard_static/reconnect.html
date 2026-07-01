@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconnecter Sessions - DOBERTO-XD</title>
+    <link rel="stylesheet" href="/dashboard/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-link">← Retour au Dashboard</a>
+        <h1>📡 Reconnecter les Sessions</h1>
+        
+        <div class="info-box">
+            <strong>ℹ️ Info:</strong> Cette action va reconnecter toutes les sessions inactives avec un délai de 1 seconde entre chaque tentative.
+        </div>
+        
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <button id="reconnectBtn" class="btn-reconnect">🔄 Lancer la reconnexion</button>
+        
+        <div id="results" class="results">
+            <h3>📋 Résultats:</h3>
+            <div id="resultsList"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('reconnectBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('reconnectBtn');
+            const results = document.getElementById('results');
+            const resultsList = document.getElementById('resultsList');
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            
+            btn.disabled = true;
+            btn.textContent = 'Reconnexion en cours...';
+            results.classList.remove('show');
+            resultsList.innerHTML = '';
+            progressBar.classList.add('show');
+            progressFill.style.width = '0%';
+            
+            try {
+                const response = await fetch('/reconnect');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    results.classList.add('show');
+                    
+                    let completed = 0;
+                    data.connections.forEach((conn, index) => {
+                        setTimeout(() => {
+                            const item = document.createElement('div');
+                            
+                            if (conn.status === 'already_connected') {
+                                item.className = 'result-item connected';
+                                item.innerHTML = `<strong>${conn.number}</strong> - 🟢 Déjà connecté`;
+                            } else if (conn.status === 'connection_initiated') {
+                                item.className = 'result-item initiated';
+                                item.innerHTML = `<strong>${conn.number}</strong> - ✅ Connexion initiée`;
+                            } else {
+                                item.className = 'result-item failed';
+                                item.innerHTML = `<strong>${conn.number}</strong> - ❌ Échec: ${conn.error || 'Erreur inconnue'}`;
+                            }
+                            
+                            resultsList.appendChild(item);
+                            completed++;
+                            progressFill.style.width = `${(completed / data.connections.length) * 100}%`;
+                        }, index * 100); // Petit délai pour l'animation
+                    });
+                } else {
+                    alert('Erreur: ' + data.error);
+                }
+            } catch (error) {
+                alert('Erreur: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Lancer la reconnexion';
+            }
+        });
+    </script>
+</body>
+</html>

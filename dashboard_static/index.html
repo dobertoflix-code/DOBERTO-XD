@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOBERTO-XD — Dashboard</title>
+    <link rel="stylesheet" href="/dashboard/static/style.css">
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 DOBERTO-XD <span style="color:var(--text-faint); font-weight:600; font-size:0.9rem;">Dashboard</span></h1>
+        <p id="botStatus">Chajman estati bot la...</p>
+    </div>
+
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Moun Konekte Kounye a</h3>
+                <div class="number" id="activeCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Sesyon</h3>
+                <div class="number" id="totalCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Newsletters</h3>
+                <div class="number" id="newsletterCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Administratè</h3>
+                <div class="number" id="adminCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Estati Bot</h3>
+                <div class="number">
+                    <span class="status-badge status-online" id="botStatusBadge">Online</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="modules-grid">
+            <!-- Module Sessions -->
+            <div class="module">
+                <h2>📱 Sesyon</h2>
+                <div class="module-links">
+                    <a href="/dashboard/static/sessions.html">
+                        <i>📋</i> Jere sesyon yo (kantite konekte)
+                    </a>
+                    <a href="/dashboard/static/active.html">
+                        <i>📊</i> Wè sesyon aktif yo an dirèk
+                    </a>
+                    <a href="/dashboard/static/session-connect.html">
+                        <i>🔌</i> Konekte yon nimewo
+                    </a>
+                    <a href="/dashboard/static/session-config.html">
+                        <i>⚙️</i> Konfigire yon sesyon
+                    </a>
+                    <a href="/api/sessions" target="_blank">
+                        <i>🔗</i> API Sessions (JSON)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Module Newsletter -->
+            <div class="module">
+                <h2>📬 Newsletters</h2>
+                <div class="module-links">
+                    <a href="/dashboard/static/newsletters.html">
+                        <i>📋</i> Jere newsletters
+                    </a>
+                    <a href="/dashboard/static/newsletter-add.html">
+                        <i>➕</i> Ajoute yon newsletter
+                    </a>
+                    <a href="/dashboard/static/newsletter-remove.html">
+                        <i>🗑️</i> Retire yon newsletter
+                    </a>
+                    <a href="/api/newsletters" target="_blank">
+                        <i>🔗</i> API List (JSON)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Module Administrateurs -->
+            <div class="module">
+                <h2>👑 Administratè</h2>
+                <div class="module-links">
+                    <a href="/dashboard/static/admin-add.html">
+                        <i>➕</i> Ajoute yon admin
+                    </a>
+                    <a href="/dashboard/static/admin-remove.html">
+                        <i>🗑️</i> Retire yon admin
+                    </a>
+                    <a href="/api/admins" target="_blank">
+                        <i>🔗</i> API List (JSON)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Module Actions Rapides -->
+            <div class="module">
+                <h2>⚡ Aksyon Rapid</h2>
+                <div class="module-links">
+                    <a href="/dashboard/static/connect-all.html">
+                        <i>🔄</i> Konekte tout sesyon yo
+                    </a>
+                    <a href="/dashboard/static/reconnect.html">
+                        <i>📡</i> Rekonekte sesyon yo
+                    </a>
+                    <a href="/ping" target="_blank">
+                        <i>🏓</i> Ping bot la
+                    </a>
+                    <a href="/active" target="_blank">
+                        <i>🔗</i> API Active (JSON)
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console Log -->
+        <div class="module" style="grid-column: 1/-1;">
+            <h2>📝 Console</h2>
+            <div id="console">
+                <div>🚀 Dashboard chajè...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function updateStats() {
+            try {
+                // Sesyon aktif (moun konekte kounye a)
+                const activeRes = await fetch('/api/active');
+                const activeData = await activeRes.json();
+                document.getElementById('activeCount').textContent = activeData.count ?? 0;
+
+                // Total sesyon anrejistre
+                const sessRes = await fetch('/api/sessions');
+                const sessData = await sessRes.json();
+                document.getElementById('totalCount').textContent = sessData.sessions?.length ?? 0;
+
+                // Newsletters
+                const newsRes = await fetch('/api/newsletters');
+                const newsData = await newsRes.json();
+                document.getElementById('newsletterCount').textContent = newsData.list?.length ?? 0;
+
+                // Admins
+                const adminRes = await fetch('/api/admins');
+                const adminData = await adminRes.json();
+                document.getElementById('adminCount').textContent = adminData.list?.length ?? 0;
+
+                // Estati bot
+                const pingRes = await fetch('/ping');
+                if (pingRes.ok) {
+                    document.getElementById('botStatus').textContent = '✅ Bot la ap mache nòmalman';
+                    document.getElementById('botStatusBadge').className = 'status-badge status-online';
+                    document.getElementById('botStatusBadge').textContent = 'Online';
+                }
+
+                const consoleDiv = document.getElementById('console');
+                const time = new Date().toLocaleTimeString('fr-FR');
+                consoleDiv.innerHTML += `<div>[${time}] Estatistik mizajou — Konekte: ${activeData.count ?? 0}</div>`;
+                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                while (consoleDiv.children.length > 40) consoleDiv.removeChild(consoleDiv.firstChild);
+
+            } catch (error) {
+                console.error('Error updating stats:', error);
+                document.getElementById('botStatus').textContent = '❌ Erè koneksyon ak sèvè a';
+                const badge = document.getElementById('botStatusBadge');
+                badge.className = 'status-badge status-offline';
+                badge.textContent = 'Offline';
+            }
+        }
+
+        updateStats();
+        setInterval(updateStats, 10000);
+    </script>
+</body>
+</html>

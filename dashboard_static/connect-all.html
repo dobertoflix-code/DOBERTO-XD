@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecter Toutes les Sessions - DOBERTO-XD</title>
+    <link rel="stylesheet" href="/dashboard/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-link">← Retour au Dashboard</a>
+        <h1>🔄 Connecter Toutes les Sessions</h1>
+        
+        <div class="warning-box">
+            <strong>⚠️ Attention:</strong> Cette action va initier la connexion de toutes les sessions enregistrées dans la base de données. Cela peut prendre quelques minutes.
+        </div>
+        
+        <button id="connectBtn" class="btn-connect">🚀 Lancer la connexion</button>
+        
+        <div id="results" class="results">
+            <h3>📋 Résultats:</h3>
+            <div id="resultsList"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('connectBtn');
+            const results = document.getElementById('results');
+            const resultsList = document.getElementById('resultsList');
+            
+            btn.disabled = true;
+            btn.textContent = 'Connexion en cours...';
+            results.classList.remove('show');
+            resultsList.innerHTML = '';
+            
+            try {
+                const response = await fetch('/connect-all');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    results.classList.add('show');
+                    
+                    data.connections.forEach(conn => {
+                        const item = document.createElement('div');
+                        item.className = `result-item ${conn.status}`;
+                        
+                        let statusText = '';
+                        let statusClass = '';
+                        
+                        switch(conn.status) {
+                            case 'connection_initiated':
+                                statusText = '✅ Connexion initiée';
+                                statusClass = 'success';
+                                break;
+                            case 'already_connected':
+                                statusText = '🟢 Déjà connecté';
+                                statusClass = 'already';
+                                break;
+                            case 'failed':
+                                statusText = '❌ Échec: ' + (conn.error || 'Erreur inconnue');
+                                statusClass = 'failed';
+                                break;
+                        }
+                        
+                        item.innerHTML = `
+                            <span><strong>${conn.number}</strong></span>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        `;
+                        
+                        resultsList.appendChild(item);
+                    });
+                } else {
+                    alert('Erreur: ' + data.error);
+                }
+            } catch (error) {
+                alert('Erreur: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 Lancer la connexion';
+            }
+        });
+    </script>
+</body>
+</html>

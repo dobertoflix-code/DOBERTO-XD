@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurer Session - DOBERTO-XD</title>
+    <link rel="stylesheet" href="/dashboard/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-link">← Retour au Dashboard</a>
+        <h1>⚙️ Configurer Session</h1>
+        
+        <div class="info-box">
+            <strong>ℹ️ Note:</strong> La configuration nécessite une confirmation par OTP envoyé sur WhatsApp.
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <form id="configForm">
+            <input type="hidden" id="number" name="number">
+            
+            <div class="form-group">
+                <label for="config">Configuration JSON:</label>
+                <textarea id="config" name="config" required></textarea>
+            </div>
+            
+            <button type="button" id="sendOtpBtn" class="btn-otp">📱 Envoyer OTP</button>
+            
+            <div id="otpSection" class="otp-section">
+                <div class="form-group">
+                    <label for="otp">Code OTP reçu sur WhatsApp:</label>
+                    <input type="text" id="otp" name="otp" placeholder="Entrez le code OTP à 6 chiffres">
+                </div>
+                <button type="button" id="verifyOtpBtn" class="btn-update">✅ Vérifier et Appliquer</button>
+            </div>
+        </form>
+        
+        <div style="margin-top: 2rem;">
+            <h3>📝 Exemple de configuration:</h3>
+            <pre style="background: #f4f4f4; padding: 1rem; border-radius: 5px; overflow-x: auto;">
+{
+  "prefix": "!",
+  "language": "fr",
+  "autoRead": true,
+  "antiDelete": true,
+  "antiViewOnce": false,
+  "autoReact": true,
+  "autoBio": true
+}
+            </pre>
+        </div>
+    </div>
+
+    <script>
+        // Récupérer le numéro de l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const number = urlParams.get('number');
+        document.getElementById('number').value = number || '';
+
+        async function loadCurrentConfig() {
+            if (!number) return;
+            
+            try {
+                const response = await fetch(`/api/session/config?number=${number}`);
+                const data = await response.json();
+                if (data.ok && data.config) {
+                    document.getElementById('config').value = JSON.stringify(data.config, null, 2);
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+            }
+        }
+
+        document.getElementById('sendOtpBtn').addEventListener('click', async () => {
+            const number = document.getElementById('number').value;
+            let config = document.getElementById('config').value;
+            
+            if (!number || !config) {
+                alert('Veuillez remplir tous les champs');
+                return;
+            }
+            
+            try {
+                // Valider le JSON
+                JSON.parse(config);
+            } catch (e) {
+                alert('Configuration JSON invalide');
+                return;
+            }
+            
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = 'message';
+            messageDiv.textContent = 'Envoi de l\'OTP...';
+            
+            try {
+                const response = await fetch(`/update-config?number=${encodeURIComponent(number)}&config=${encodeURIComponent(config)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = '✅ OTP envoyé! Vérifiez votre WhatsApp.';
+                    document.getElementById('otpSection').style.display = 'block';
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = '❌ Erreur: ' + data.error;
+                }
+            } catch (error) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = '❌ Erreur: ' + error.message;
+            }
+        });
+
+        document.getElementById('verifyOtpBtn').addEventListener('click', async () => {
+            const number = document.getElementById('number').value;
+            const otp = document.getElementById('otp').value;
+            
+            if (!otp) {
+                alert('Veuillez entrer le code OTP');
+                return;
+            }
+            
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = 'message';
+            messageDiv.textContent = 'Vérification...';
+            
+            try {
+                const response = await fetch(`/verify-otp?number=${encodeURIComponent(number)}&otp=${encodeURIComponent(otp)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = '✅ Configuration mise à jour avec succès!';
+                    document.getElementById('otpSection').style.display = 'none';
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = '❌ Erreur: ' + data.error;
+                }
+            } catch (error) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = '❌ Erreur: ' + error.message;
+            }
+        });
+
+        if (number) {
+            loadCurrentConfig();
+        }
+    </script>
+</body>
+</html>

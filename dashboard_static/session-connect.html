@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecter Session - DOBERTO-XD</title>
+    <link rel="stylesheet" href="/dashboard/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="back-link">← Retour au Dashboard</a>
+        <h1>🔌 Connecter un Numéro</h1>
+        
+        <div id="message" class="message"></div>
+        
+        <form id="connectForm">
+            <div class="form-group">
+                <label for="number">Numéro (format international):</label>
+                <input type="text" id="number" name="number" required 
+                    placeholder="Ex: 33612345678">
+            </div>
+            
+            <button type="submit" class="btn-connect">Connecter</button>
+        </form>
+        
+        <div id="qrcode" class="qrcode">
+            <h3>Scannez ce QR Code avec WhatsApp</h3>
+            <img id="qrimg" src="" alt="QR Code">
+            <p id="qrstatus" style="margin-top: 1rem;">En attente de scan...</p>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+
+        document.getElementById('connectForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const number = document.getElementById('number').value.trim();
+            const messageDiv = document.getElementById('message');
+            const qrcodeDiv = document.getElementById('qrcode');
+            
+            messageDiv.className = 'message';
+            messageDiv.textContent = 'Connexion en cours...';
+            
+            try {
+                const response = await fetch(`/code?number=${encodeURIComponent(number)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.status === 'already_connected') {
+                        messageDiv.className = 'message info';
+                        messageDiv.textContent = 'ℹ️ Ce numéro est déjà connecté';
+                    } else {
+                        messageDiv.className = 'message success';
+                        messageDiv.textContent = '✅ Connexion initiée. En attente du QR code...';
+                        
+                        // Connect to SSE for QR code
+                        if (eventSource) eventSource.close();
+                        eventSource = new EventSource(`/qr-stream?number=${number}`);
+                        
+                        eventSource.onmessage = function(event) {
+                            const data = JSON.parse(event.data);
+                            if (data.qr) {
+                                qrcodeDiv.style.display = 'block';
+                                document.getElementById('qrimg').src = data.qr;
+                            }
+                            if (data.status === 'connected') {
+                                messageDiv.className = 'message success';
+                                messageDiv.textContent = '✅ Connecté avec succès!';
+                                qrcodeDiv.style.display = 'none';
+                                eventSource.close();
+                            }
+                        };
+                    }
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = '❌ Erreur: ' + data.error;
+                }
+            } catch (error) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = '❌ Erreur: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
