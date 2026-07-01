@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOBERTO-XD — Konekte Bot WhatsApp</title>
+<meta name="description" content="Konekte sesyon WhatsApp ou ak DOBERTO-XD an 2 minit.">
+
+<style>
+  :root{
+    --bg: #0a0c11;
+    --surface: #12151d;
+    --surface-2: #171b25;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.16);
+    --text: #f2f4f8;
+    --text-dim: #97a0b0;
+    --text-faint: #5c6474;
+    --accent: #25d366;
+    --accent-dim: rgba(37,211,102,0.14);
+    --blue: #4fc3f7;
+    --danger: #ff6b6b;
+    --danger-dim: rgba(255,107,107,0.12);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  body{
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background:
+      radial-gradient(900px 480px at 15% -10%, rgba(37,211,102,0.10), transparent),
+      radial-gradient(900px 480px at 100% 10%, rgba(79,195,247,0.08), transparent),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .card{
+    width: min(100%, 430px);
+    background: linear-gradient(180deg, var(--surface), var(--surface-2));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 38px 32px 30px;
+    text-align: center;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before{
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--blue));
+  }
+
+  .logo-badge{
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 18px;
+    border-radius: 16px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(37,211,102,0.3);
+    display: grid;
+    place-items: center;
+    font-size: 26px;
+  }
+
+  .brand{
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .tagline{
+    font-size: 13px;
+    color: var(--text-faint);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 6px;
+  }
+
+  .subtitle{
+    font-size: 13.5px;
+    color: var(--text-dim);
+    margin-bottom: 30px;
+    line-height: 1.55;
+  }
+
+  .field{ text-align: left; margin-bottom: 8px; }
+
+  .field label{
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+    letter-spacing: 0.2px;
+  }
+
+  .input-row{
+    display: flex;
+    gap: 10px;
+  }
+
+  .input-row input{
+    flex: 1;
+    height: 50px;
+    padding: 0 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 16px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .input-row input:focus{
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .input-row input::placeholder{ color: var(--text-faint); }
+
+  .hint{
+    font-size: 11.5px;
+    color: var(--text-faint);
+    text-align: left;
+    margin: 8px 2px 22px;
+  }
+
+  button.submit{
+    width: 100%;
+    height: 50px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #1eab54);
+    color: #062411;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 10px 26px rgba(37,211,102,0.22);
+    transition: transform .15s, box-shadow .15s, opacity .15s;
+  }
+
+  button.submit:hover{ transform: translateY(-1px); box-shadow: 0 14px 32px rgba(37,211,102,0.3); }
+  button.submit:active{ transform: translateY(0); }
+  button.submit:disabled{ opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .loader{
+    width: 17px; height: 17px;
+    border: 2.5px solid rgba(6,36,17,0.3);
+    border-top-color: #062411;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  .result{
+    margin-top: 20px;
+    border-radius: 12px;
+    display: none;
+    overflow: hidden;
+  }
+
+  .result.show{ display: block; }
+
+  .result-box{
+    padding: 16px 18px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    text-align: left;
+  }
+
+  .result-box.success{
+    background: var(--accent-dim);
+    border: 1px solid rgba(37,211,102,0.3);
+    color: var(--accent);
+  }
+
+  .result-box.error{
+    background: var(--danger-dim);
+    border: 1px solid rgba(255,107,107,0.3);
+    color: var(--danger);
+  }
+
+  .code-display{
+    margin-top: 4px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 5px;
+    color: var(--text);
+    cursor: pointer;
+    user-select: all;
+    transition: border-color .2s, background .2s;
+  }
+
+  .code-display:hover{ border-color: var(--accent); background: rgba(37,211,102,0.06); }
+  .code-display.copied{ border-color: var(--accent); color: var(--accent); }
+
+  .code-caption{
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: center;
+  }
+
+  .steps{
+    margin-top: 26px;
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+
+  .steps-title{
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--blue);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+
+  .steps ol{ padding-left: 18px; margin: 0; }
+  .steps li{ font-size: 12.5px; color: var(--text-dim); line-height: 1.8; }
+  .steps li::marker{ color: var(--accent); font-weight: 700; }
+
+  .footer-note{
+    margin-top: 22px;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  @media (max-width: 400px){
+    .card{ padding: 30px 22px 24px; }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <div class="logo-badge">🤖</div>
+  <div class="brand">DOBERTO-XD</div>
+  <div class="tagline">X Community MD</div>
+  <div class="subtitle">Konekte sesyon WhatsApp ou an kèk segond — antre nimewo ou pou jwenn kòd pairing la.</div>
+
+  <div class="field">
+    <label for="number">Nimewo WhatsApp (san "+")</label>
+    <div class="input-row">
+      <input type="tel" id="number" inputmode="numeric" placeholder="5094xxxxxxx" maxlength="16" autocomplete="tel">
+    </div>
+    <div class="hint">Egzanp pou Ayiti: 5094xxxxxxx — pa mete + ni espas</div>
+  </div>
+
+  <button class="submit" id="submit">
+    <span id="submit-text">Jwenn kòd pairing</span>
+    <div class="loader" id="loader"></div>
+  </button>
+
+  <div class="result" id="result"></div>
+
+  <div class="steps">
+    <div class="steps-title">Kòman pou konekte</div>
+    <ol>
+      <li>Louvri WhatsApp → Paramèt → Appareils liés</li>
+      <li>Peze "Lier un appareil"</li>
+      <li>Chwazi "Lier avec un numéro de téléphone"</li>
+      <li>Tape kòd 8 chif ki parèt anwo a</li>
+    </ol>
+  </div>
+
+  <div class="footer-note">Devlope pa DOBERTO X Team Community</div>
+</div>
+
+<script>
+const numberInput = document.getElementById("number");
+const submitBtn = document.getElementById("submit");
+const submitText = document.getElementById("submit-text");
+const loader = document.getElementById("loader");
+const result = document.getElementById("result");
+
+numberInput.addEventListener("input", () => {
+  numberInput.value = numberInput.value.replace(/[^0-9]/g, "");
+});
+
+numberInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") requestCode();
+});
+
+submitBtn.addEventListener("click", requestCode);
+
+async function requestCode() {
+  const number = numberInput.value.trim();
+
+  if (!number || number.length < 8) {
+    showResult('error', '⚠️ Antre yon nimewo valid (minimòm 8 chif, san "+")');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitText.style.display = "none";
+  loader.style.display = "block";
+  result.classList.remove("show");
+
+  try {
+    const res = await fetch(`/code?number=${encodeURIComponent(number)}`);
+    const data = await res.json();
+
+    if (data.code || data.pairingCode || data.pairing_code) {
+      const code = data.code || data.pairingCode || data.pairing_code;
+      result.innerHTML = `
+        <div class="result-box success">
+          ✅ Kòd ou a prèt! Kopye l epi antre l nan WhatsApp.
+          <div class="code-display" id="codeDisplay" onclick="copyCode('${code}')">${code}</div>
+          <div class="code-caption">Kòd sa a valid pou kèk minit sèlman — klike pou kopye</div>
+        </div>`;
+      result.classList.add("show");
+    } else if (data.status === 'already_connected') {
+      showResult('success', '✅ Nimewo sa a deja konekte ak bot la!');
+    } else {
+      showResult('error', '❌ ' + (data.error || data.message || 'Erè enkoni — eseye ankò'));
+    }
+  } catch (e) {
+    showResult('error', '❌ Koneksyon ak sèvè a echwe — verifye bot la ap kouri epi eseye ankò');
+  } finally {
+    submitBtn.disabled = false;
+    submitText.style.display = "inline";
+    loader.style.display = "none";
+  }
+}
+
+function showResult(type, html) {
+  result.innerHTML = `<div class="result-box ${type}">${html}</div>`;
+  result.classList.add("show");
+}
+
+async function copyCode(code) {
+  try {
+    await navigator.clipboard.writeText(code);
+    const el = document.getElementById("codeDisplay");
+    el.classList.add("copied");
+    const original = el.textContent;
+    el.textContent = "✓ Kopye!";
+    setTimeout(() => { el.classList.remove("copied"); el.textContent = original; }, 1500);
+  } catch (e) {}
+}
+</script>
+
+</body>
+</html>
