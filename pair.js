@@ -166,7 +166,7 @@ const DEFAULT_SESSION_CONFIG = {
 };
 const config = {
   MAX_RETRIES: 3,
-  GROUP_INVITE_LINK: 'https://chat.whatsapp.com/HN7J6R61Zj9FpsMgHMn1TH',
+  GROUP_INVITE_LINK: 'https://chat.whatsapp.com/Jhfto4qTh6GAEjBOvPyA2w?s=cl&p=a&mlu=3',
   RCD_IMAGE_PATH: 'https://i.ibb.co/GQ0pdH2t/IMG-20260504-WA0032.jpg',
   NEWSLETTER_JIDS: [
   '120363407485857714@newsletter',
