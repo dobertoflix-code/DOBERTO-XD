@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: doberto-xd
+    runtime: node
+    buildCommand: npm install --legacy-peer-deps
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DASHBOARD_USER
+        value: admin
+      - key: DASHBOARD_PASSWORD
+        sync: false
+    autoDeploy: true
