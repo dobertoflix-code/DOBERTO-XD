@@ -278,6 +278,31 @@ async function setStatusInfractionCount(sessionId, groupId, participant, count) 
   return true;
 }
 
+// ── Server Status (miltisèvè) ─────────────────────────────────
+
+async function upsertServerStatus(serverId, data) {
+  const database = await initMongo();
+  await database.collection('server_status').updateOne(
+    { serverId },
+    { $set: { serverId, ...data, updatedAt: Date.now() } },
+    { upsert: true }
+  );
+}
+
+async function listServerStatuses() {
+  const database = await initMongo();
+  const docs = await database.collection('server_status').find({}).sort({ serverId: 1 }).toArray();
+  // Retire sèvè ki pa voye heartbeat depi plis pase 2 minit (konsidere yo offline)
+  const now = Date.now();
+  return docs.map(d => ({
+    serverId: d.serverId,
+    url: d.url,
+    activeSessions: d.activeSessions || 0,
+    maxSessions: d.maxSessions || 50,
+    online: (now - (d.updatedAt || 0)) < 120000
+  }));
+}
+
 // ── Exports (menm non ak local_db.js) ──────────────────────────
 
 module.exports = {
@@ -309,4 +334,6 @@ module.exports = {
   incrStatusInfraction,
   resetStatusInfraction,
   setStatusInfractionCount,
+  upsertServerStatus,
+  listServerStatuses,
 };
