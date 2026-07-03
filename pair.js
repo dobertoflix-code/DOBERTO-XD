@@ -16,7 +16,7 @@ const axios = require('axios');
 const FileType = require('file-type');
 const fetch = require('node-fetch');
 // MongoDB ranplase ak local_db.js
-const { initMongo, saveCredsToMongo, loadCredsFromMongo, removeSessionFromMongo, addNumberToMongo, removeNumberFromMongo, getAllNumbersFromMongo, loadAdminsFromMongo, addAdminToMongo, removeAdminFromMongo, addNewsletterToMongo, removeNewsletterFromMongo, listNewslettersFromMongo, saveNewsletterReaction, addNewsletterReactConfig, removeNewsletterReactConfig, listNewsletterReactsFromMongo, getReactConfigForJid, setUserConfigInMongo, loadUserConfigFromMongo, getRestartSchedule, setRestartSchedule, stopRestartSchedule, ensureStatusInfractionsIndex, getStatusInfractionDoc, incrStatusInfraction, resetStatusInfraction, setStatusInfractionCount } = require("./mongo_db");
+const { initMongo, saveCredsToMongo, loadCredsFromMongo, removeSessionFromMongo, addNumberToMongo, removeNumberFromMongo, getAllNumbersFromMongo, loadAdminsFromMongo, addAdminToMongo, removeAdminFromMongo, addNewsletterToMongo, removeNewsletterFromMongo, listNewslettersFromMongo, saveNewsletterReaction, addNewsletterReactConfig, removeNewsletterReactConfig, listNewsletterReactsFromMongo, getReactConfigForJid, setUserConfigInMongo, loadUserConfigFromMongo, getRestartSchedule, setRestartSchedule, stopRestartSchedule, ensureStatusInfractionsIndex, getStatusInfractionDoc, incrStatusInfraction, resetStatusInfraction, setStatusInfractionCount, upsertServerStatus, listServerStatuses } = require("./mongo_db");
 const { loadPlugins } = require('./pluginLoader');
 const plugins = loadPlugins();
 const { sms, downloadMediaMessage } = require('./msg')
@@ -218,6 +218,28 @@ function getHaitiTimestamp() {
 
 // Résultat : "lundi 27 janvier 2025, 15:30:45"
 const activeSockets = new Map();
+
+// ============================================================
+// HEARTBEAT MILTISÈVÈ — rapòte chaj sèvè sa a bay MongoDB
+// pou paj "Choose a Server" la ka montre disponiblite an tan reyèl
+// ============================================================
+const SERVER_ID = process.env.SERVER_ID || 'server-1';
+const SERVER_URL = process.env.SERVER_URL || `http://localhost:${process.env.PORT || 2015}`;
+const MAX_SESSIONS = parseInt(process.env.MAX_SESSIONS || '50', 10);
+
+async function reportServerHeartbeat() {
+  try {
+    await upsertServerStatus(SERVER_ID, {
+      url: SERVER_URL,
+      activeSessions: activeSockets.size,
+      maxSessions: MAX_SESSIONS
+    });
+  } catch (e) {
+    console.error('[Heartbeat] Echèk rapò sèvè:', e.message);
+  }
+}
+setInterval(reportServerHeartbeat, 15000);
+setTimeout(reportServerHeartbeat, 5000);
 
 // ============================================================
 // ANTIBOT — Silanse lòt bot nan group yo
