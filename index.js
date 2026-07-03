@@ -21,6 +21,11 @@ app.get('/pair', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'pair.html'));
 });
 
+// Paj "Choose a Server" (miltisèvè)
+app.get('/servers', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'servers.html'));
+});
+
 // Paj prensipal
 app.get('/', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'main.html'));
