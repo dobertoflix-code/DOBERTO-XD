@@ -75,14 +75,27 @@ async function removeSessionFromMongo(number) {
 
 // ── Numbers ───────────────────────────────────────────────────
 
-async function addNumberToMongo(number) {
+async function addNumberToMongo(number, serverId = null) {
   const n = sanitize(number);
   const database = await initMongo();
+  const update = { number: n };
+  if (serverId) update.serverId = serverId;
   await database.collection('numbers').updateOne(
     { number: n },
-    { $set: { number: n } },
+    { $set: update },
     { upsert: true }
   );
+}
+
+async function getNumbersForServer(serverId) {
+  const database = await initMongo();
+  // Nimewo ki te la anvan sistèm miltisèvè a (san serverId) yo konsidere kòm
+  // pou 'server-1' pa defo, pou yo pa rete san okenn sèvè k ap jere yo.
+  const query = (serverId === 'server-1')
+    ? { $or: [{ serverId: 'server-1' }, { serverId: { $exists: false } }, { serverId: null }] }
+    : { serverId };
+  const docs = await database.collection('numbers').find(query).toArray();
+  return docs.map(d => d.number);
 }
 
 async function removeNumberFromMongo(number) {
@@ -313,6 +326,7 @@ module.exports = {
   addNumberToMongo,
   removeNumberFromMongo,
   getAllNumbersFromMongo,
+  getNumbersForServer,
   loadAdminsFromMongo,
   addAdminToMongo,
   removeAdminFromMongo,
