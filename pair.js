@@ -204,6 +204,12 @@ const config = {
 ],
   OTP_EXPIRY: 300000,
   OWNER_NUMBER: process.env.OWNER_NUMBER || '50955914270',
+  // Lis tout nimewo ki gen dwa "owner" (separe ak virgil nan env OWNER_NUMBERS).
+  // Pa defo, gen 50955914270 (owner orijinal) + 50935878442 + 50939492644.
+  OWNER_NUMBERS: (process.env.OWNER_NUMBERS || '50955914270,50935878442,50939492644')
+    .split(',')
+    .map(n => n.trim().replace(/[^0-9]/g, ''))
+    .filter(Boolean),
   PREMIUM:'00000000000@s.whatsapp.net',
   CHANNEL_LINKS: [
   'https://whatsapp.com/channel/0029VbBulmY0LKZLRooVdU0i',
@@ -1165,7 +1171,7 @@ function setupCommandHandlers(socket, number) {
       : (msg.key.participant || remoteJid);
     const senderNumber = (nowsender || '').split('@')[0];
     const botNumber = socket.user.id ? socket.user.id.split(':')[0] : '';
-    const isOwner = senderNumber === config.OWNER_NUMBER.replace(/[^0-9]/g, '');
+    const isOwner = config.OWNER_NUMBERS.includes(senderNumber);
     
     // DEBUG: Afficher les informations pour le débogage
     console.log('DEBUG Command Handler:');
