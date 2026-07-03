@@ -16,7 +16,7 @@ const axios = require('axios');
 const FileType = require('file-type');
 const fetch = require('node-fetch');
 // MongoDB ranplase ak local_db.js
-const { initMongo, saveCredsToMongo, loadCredsFromMongo, removeSessionFromMongo, addNumberToMongo, removeNumberFromMongo, getAllNumbersFromMongo, loadAdminsFromMongo, addAdminToMongo, removeAdminFromMongo, addNewsletterToMongo, removeNewsletterFromMongo, listNewslettersFromMongo, saveNewsletterReaction, addNewsletterReactConfig, removeNewsletterReactConfig, listNewsletterReactsFromMongo, getReactConfigForJid, setUserConfigInMongo, loadUserConfigFromMongo, getRestartSchedule, setRestartSchedule, stopRestartSchedule, ensureStatusInfractionsIndex, getStatusInfractionDoc, incrStatusInfraction, resetStatusInfraction, setStatusInfractionCount, upsertServerStatus, listServerStatuses, getNumbersForServer } = require("./mongo_db");
+const { initMongo, saveCredsToMongo, loadCredsFromMongo, removeSessionFromMongo, addNumberToMongo, removeNumberFromMongo, getAllNumbersFromMongo, loadAdminsFromMongo, addAdminToMongo, removeAdminFromMongo, addNewsletterToMongo, removeNewsletterFromMongo, listNewslettersFromMongo, saveNewsletterReaction, addNewsletterReactConfig, removeNewsletterReactConfig, listNewsletterReactsFromMongo, getReactConfigForJid, loadUserConfigFromMongo, getRestartSchedule, setRestartSchedule, stopRestartSchedule, ensureStatusInfractionsIndex, getStatusInfractionDoc, incrStatusInfraction, resetStatusInfraction, setStatusInfractionCount, upsertServerStatus, listServerStatuses, getNumbersForServer, setUserConfigInMongo: _setUserConfigInMongoRaw } = require("./mongo_db");
 const { loadPlugins } = require('./pluginLoader');
 const plugins = loadPlugins();
 const { sms, downloadMediaMessage } = require('./msg')
@@ -41,17 +41,34 @@ const {
 } = require('./welcome_goodbye');
 const translate = require('google-translate-api');
 
-// ── FIX: loadSessionConfigMerged te itilize (liy ~486 ak ~982) men li pa t janm defini/enpòte,
-// sa ki te lakòz yon ReferenceError sou CHAK mesaj antrant e anpeche TOUT kòmand (menu enkli) reponn.
-// (Itilize DEFAULT_SESSION_CONFIG ki deja defini pi ba nan fichye sa a.)
+// ── CACHE KONFIGIRASYON (evite rekèt MongoDB repetitif chak mesaj) ──
+const sessionConfigCache = new Map(); // sessionId -> { config, ts }
+const CONFIG_CACHE_TTL_MS = 30000; // 30 segond
+
 async function loadSessionConfigMerged(sessionId) {
+  const cached = sessionConfigCache.get(sessionId);
+  if (cached && (Date.now() - cached.ts) < CONFIG_CACHE_TTL_MS) {
+    return cached.config;
+  }
   try {
     const saved = await loadUserConfigFromMongo(sessionId);
-    return { ...DEFAULT_SESSION_CONFIG, ...(saved || {}) };
+    const merged = { ...DEFAULT_SESSION_CONFIG, ...(saved || {}) };
+    sessionConfigCache.set(sessionId, { config: merged, ts: Date.now() });
+    return merged;
   } catch (e) {
     console.error('[loadSessionConfigMerged] error:', e.message);
-    return { ...DEFAULT_SESSION_CONFIG };
+    return cached ? cached.config : { ...DEFAULT_SESSION_CONFIG };
   }
+}
+
+// Wrapper: chak fwa konfigirasyon SAUVEGARDE, mete ajou cache a IMEDYATMAN
+// pou chanjman an aplike san atann 30s la ekspire.
+async function setUserConfigInMongo(sessionId, cfg) {
+  await _setUserConfigInMongoRaw(sessionId, cfg);
+  sessionConfigCache.set(sessionId, {
+    config: { ...DEFAULT_SESSION_CONFIG, ...cfg },
+    ts: Date.now()
+  });
 }
 
 // ── GREETING — Une seule fois par utilisateur, persistant même après redémarrage ──
