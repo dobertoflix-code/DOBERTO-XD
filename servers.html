@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chwazi yon Sèvè — DOBERTO-XD</title>
+
+<style>
+  :root{
+    --bg: #0a0c11;
+    --surface: #12151d;
+    --surface-2: #171b25;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.16);
+    --text: #f2f4f8;
+    --text-dim: #97a0b0;
+    --text-faint: #5c6474;
+    --accent: #25d366;
+    --accent-dim: rgba(37,211,102,0.14);
+    --orange: #f5a623;
+    --red: #ef4444;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{
+    min-height: 100vh;
+    background:
+      radial-gradient(1000px 520px at 12% -10%, rgba(37,211,102,0.10), transparent),
+      var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  .topbar{
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .back{
+    color: var(--text-dim); text-decoration: none; font-size: 14px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .back:hover{ color: var(--text); }
+
+  .wrap{ max-width: 640px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  h1{ font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+  .sub{ color: var(--text-dim); font-size: 13.5px; line-height: 1.6; margin-bottom: 28px; }
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: transform .15s, border-color .15s, background .15s;
+  }
+  .card:hover{ transform: translateY(-2px); border-color: var(--border-strong); background: var(--surface-2); }
+  .card.full{ opacity: 0.5; cursor: not-allowed; }
+  .card.full:hover{ transform: none; background: var(--surface); }
+
+  .card-top{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .card-name{ display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; }
+  .dot{ width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .dot.offline{ background: var(--text-faint); }
+
+  .badge{
+    font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+    background: var(--accent-dim); color: var(--accent);
+  }
+  .badge.full{ background: rgba(239,68,68,0.14); color: var(--red); }
+  .badge.offline{ background: rgba(255,255,255,0.06); color: var(--text-faint); }
+
+  .count{ color: var(--text-dim); font-size: 13px; margin-bottom: 10px; }
+
+  .bar{ height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .bar-fill{ height: 100%; border-radius: 999px; background: var(--accent); transition: width .3s; }
+  .bar-fill.mid{ background: var(--orange); }
+  .bar-fill.high{ background: var(--red); }
+
+  .empty{ text-align: center; color: var(--text-faint); padding: 40px 20px; font-size: 13.5px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/" class="back">← Akèy</a>
+</div>
+
+<div class="wrap">
+  <h1>Chwazi yon Sèvè</h1>
+  <p class="sub">Chwazi youn nan sèvè disponib yo pou konekte bot ou an. Sèvè ki plen otomatikman bloke.</p>
+
+  <div id="serverList">
+    <div class="empty">Chajman sèvè yo...</div>
+  </div>
+</div>
+
+<script>
+  async function loadServers(){
+    const list = document.getElementById('serverList');
+    try{
+      const res = await fetch('/api/servers');
+      const data = await res.json();
+      const servers = data.servers || [];
+
+      if (servers.length === 0){
+        list.innerHTML = '<div class="empty">Pa gen okenn sèvè disponib kounye a. Tanpri eseye pi ta.</div>';
+        return;
+      }
+
+      list.innerHTML = servers.map(s => {
+        const pct = Math.min(100, Math.round((s.activeSessions / s.maxSessions) * 100));
+        const isFull = s.activeSessions >= s.maxSessions;
+        const isOffline = !s.online;
+        const barClass = pct >= 90 ? 'high' : (pct >= 60 ? 'mid' : '');
+        const badgeText = isOffline ? 'Offline' : (isFull ? 'Plen' : 'Disponib');
+        const badgeClass = isOffline ? 'offline' : (isFull ? 'full' : '');
+        const cardClass = (isFull || isOffline) ? 'full' : '';
+
+        return `
+          <div class="card ${cardClass}" ${(!isFull && !isOffline) ? `onclick="selectServer('${s.url}')"` : ''}>
+            <div class="card-top">
+              <div class="card-name"><span class="dot ${isOffline ? 'offline' : ''}"></span> ${s.serverId}</div>
+              <span class="badge ${badgeClass}">${badgeText}</span>
+            </div>
+            <div class="count">${s.activeSessions} / ${s.maxSessions} sesyon</div>
+            <div class="bar"><div class="bar-fill ${barClass}" style="width:${pct}%"></div></div>
+          </div>
+        `;
+      }).join('');
+    }catch(e){
+      list.innerHTML = '<div class="empty">Erè pandan chajman sèvè yo. Tanpri rafrechi paj la.</div>';
+    }
+  }
+
+  function selectServer(url){
+    window.location.href = url.replace(/\/$/, '') + '/pair';
+  }
+
+  loadServers();
+  setInterval(loadServers, 10000);
+</script>
+
+</body>
+</html>
