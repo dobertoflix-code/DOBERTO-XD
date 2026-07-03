@@ -3,7 +3,19 @@ const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const config = require('./config');
+const { listServerStatuses } = require('./mongo_db');
 const router = express.Router();
+
+// ========== LIST DES SÈVÈ DISPONIB (pou paj "Choose a Server") ==========
+router.get('/api/servers', async (req, res) => {
+  try {
+    const servers = await listServerStatuses();
+    res.json({ servers });
+  } catch (e) {
+    res.status(500).json({ servers: [], error: e.message });
+  }
+});
+
 
 // ========== 0. AUTHENTIFICATION DASHBOARD (Basic Auth) ==========
 function safeCompare(a, b) {
