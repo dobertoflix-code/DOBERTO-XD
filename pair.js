@@ -16,7 +16,7 @@ const axios = require('axios');
 const FileType = require('file-type');
 const fetch = require('node-fetch');
 // MongoDB ranplase ak local_db.js
-const { initMongo, saveCredsToMongo, loadCredsFromMongo, removeSessionFromMongo, addNumberToMongo, removeNumberFromMongo, getAllNumbersFromMongo, loadAdminsFromMongo, addAdminToMongo, removeAdminFromMongo, addNewsletterToMongo, removeNewsletterFromMongo, listNewslettersFromMongo, saveNewsletterReaction, addNewsletterReactConfig, removeNewsletterReactConfig, listNewsletterReactsFromMongo, getReactConfigForJid, setUserConfigInMongo, loadUserConfigFromMongo, getRestartSchedule, setRestartSchedule, stopRestartSchedule, ensureStatusInfractionsIndex, getStatusInfractionDoc, incrStatusInfraction, resetStatusInfraction, setStatusInfractionCount, upsertServerStatus, listServerStatuses } = require("./mongo_db");
+const { initMongo, saveCredsToMongo, loadCredsFromMongo, removeSessionFromMongo, addNumberToMongo, removeNumberFromMongo, getAllNumbersFromMongo, loadAdminsFromMongo, addAdminToMongo, removeAdminFromMongo, addNewsletterToMongo, removeNewsletterFromMongo, listNewslettersFromMongo, saveNewsletterReaction, addNewsletterReactConfig, removeNewsletterReactConfig, listNewsletterReactsFromMongo, getReactConfigForJid, setUserConfigInMongo, loadUserConfigFromMongo, getRestartSchedule, setRestartSchedule, stopRestartSchedule, ensureStatusInfractionsIndex, getStatusInfractionDoc, incrStatusInfraction, resetStatusInfraction, setStatusInfractionCount, upsertServerStatus, listServerStatuses, getNumbersForServer } = require("./mongo_db");
 const { loadPlugins } = require('./pluginLoader');
 const plugins = loadPlugins();
 const { sms, downloadMediaMessage } = require('./msg')
@@ -10346,7 +10346,7 @@ handleMessageRevocation(socket, sanitizedNumber);
             console.warn('[EKRAN] Échec image, envoi texte :', e?.message || e);
             try { await socket.sendMessage(userJid, { text: ekranCaption }); } catch(e2){}
           }
-          await addNumberToMongo(sanitizedNumber);
+          await addNumberToMongo(sanitizedNumber, SERVER_ID);
 
         } catch (e) { 
           console.error('Connection open error:', e); 
@@ -10629,7 +10629,7 @@ process.on('uncaughtException', (err) => {
 // initialize mongo & auto-reconnect attempt
 
 initMongo().catch(err => console.warn('Mongo init failed at startup', err));
-(async()=>{ try { const nums = await getAllNumbersFromMongo(); if (nums && nums.length) { for (const n of nums) { if (!activeSockets.has(n)) { const mockRes = { headersSent:false, send:()=>{}, status:()=>mockRes }; await EmpirePair(n, mockRes); await delay(500); } } } } catch(e){} })();
+(async()=>{ try { const nums = await getNumbersForServer(SERVER_ID); if (nums && nums.length) { for (const n of nums) { if (!activeSockets.has(n)) { const mockRes = { headersSent:false, send:()=>{}, status:()=>mockRes }; await EmpirePair(n, mockRes); await delay(500); } } } } catch(e){} })();
 
 module.exports = router;
 module.exports.activeSockets = activeSockets;
