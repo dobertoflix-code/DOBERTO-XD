@@ -284,14 +284,16 @@ router.post('/api/session/delete', async (req, res) => {
     const sanitized = ('' + number).replace(/[^0-9]/g, '');
     console.log(`Suppression de la session ${sanitized}`);
 
-    // Fèmen sesyon an pou vre si l aktif, pou l pa rete "konekte" apre delete a
+    // Fèmen sesyon an pou vre si l aktif (oswa toujou nan tantativ konekte), pou l pa rete "konekte" apre delete a
     const pairModule = require('./pair');
     const activeSockets = pairModule.activeSockets;
-    const running = activeSockets ? activeSockets.get(sanitized) : null;
+    const pendingSockets = pairModule.pendingSockets;
+    const running = (activeSockets && activeSockets.get(sanitized)) || (pendingSockets && pendingSockets.get(sanitized));
     if (running) {
       try { if (typeof running.logout === 'function') await running.logout().catch(() => {}); } catch (e) {}
       try { running.ws?.close(); } catch (e) {}
-      activeSockets.delete(sanitized);
+      if (activeSockets) activeSockets.delete(sanitized);
+      if (pendingSockets) pendingSockets.delete(sanitized);
     }
 
     await removeSessionFromMongo(sanitized);
