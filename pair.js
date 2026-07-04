@@ -1591,7 +1591,6 @@ case 'alive': {
       // ============================================================
 // BRATVIDEO — Sticker animé Brat
 // ============================================================
-case 'bratvid':
 case 'bratvideo': {
   try {
     if (!args.length) {
@@ -1831,9 +1830,7 @@ case 'song': {
       // ============================================================
 // TOURL — Convertit un média en lien direct (multi-hébergeurs)
 // ============================================================
-case 'tourl':
-case 'tolink':
-case 'upload': {
+case 'tourl': {
   try {
     // ── Récupérer le média cité ou le message lui-même ──
     const quotedCtx  = msg.message?.extendedTextMessage?.contextInfo;
@@ -2186,9 +2183,7 @@ case 'shazam': {
 }
       
       
-case 'fancy':
-case 'fancytext':
-case 'style': {
+case 'fancy': {
   try {
     if (!args.length) {
       await socket.sendMessage(sender, {
@@ -2314,10 +2309,7 @@ case 'style': {
 // ============================================================
 // APK — Recherche avec carrousel interactif (elaina-baileys)
 // ============================================================
-case 'apk':
-case 'app':
-case 'playstore':
-case 'mod': {
+case 'apk': {
   try {
     if (!args.length) {
       await socket.sendMessage(sender, {
@@ -2471,9 +2463,7 @@ case 'mod': {
       
       
 // === COMMANDE RECHERCHE DE FILMS ===
-case 'sm':
-case 'movie':
-case 'silent': {
+case 'movie': {
     try {
         const query = args.join(" ");
         if (!query) {
@@ -2669,8 +2659,7 @@ case 'smsubs': {
 }
 
 // === COMMANDE TÉLÉCHARGEMENT FILM ===
-case 'dlmovie':
-case 'downloadmovie': {
+case 'dlmovie': {
     try {
         const movieId = args[0];
         const season = (args[1] && args[1] !== 'null') ? args[1] : null; 
@@ -3432,8 +3421,7 @@ ${prefix}goodbye reset — remettre le message par défaut`
 // ============================================================
 // TAKE — Renommer un sticker (titre + auteur BASEBOT-MD)
 // ============================================================
-case 'take':
-case 'wm': {
+case 'take': {
   try {
     const webp   = require('node-webpmux');
     const crypto = require('crypto');
@@ -3924,8 +3912,7 @@ case 'setgpp': {
 }
 
 
-case 'hidetag':
-case 'h': {
+case 'hidetag': {
   if (!from.endsWith('@g.us')) {
     await socket.sendMessage(from, { text: '❗ Utilise cette commande dans un groupe.' }, { quoted: msg });
     break;
@@ -4716,7 +4703,7 @@ case 'showconfig2': {
 }
 
 
-case 'sticker': case 's': {
+case 'sticker': {
   try {
     // parser args pour "auteur | titre"
     const raw = (args && args.join(' ')) || '';
@@ -4813,7 +4800,6 @@ case 'sticker': case 's': {
 }
 
 
-case 'setppfull':
 case 'setpp': {
   try {
     // Résolution sécurisée du préfixe (variable peut être absente selon le contexte)
@@ -5298,9 +5284,7 @@ case 'ad': {
     break;
 }
             // ============ FORWARD/RETURN VOICE ============
-case 'rvo':
-case 'readviewonce':
-case 'vv': {
+case 'readviewonce': {
   try {
     // Récupération du message cité (même logique que tovn)
     const quotedCtx = msg.message?.extendedTextMessage?.contextInfo;
@@ -5420,49 +5404,6 @@ case 'vv': {
             // ============ COMMANDE INCONNUE ============
 
 // --- utilitaire minimal pour settings de groupe (si besoin) ---
-
-
-// --- HANDLERS : add, kick, mute, unmute ---
-// Variables attendues dans le scope : socket, from (chatId), sender, msg, args
-
-case 'add': {
-  if (!from.endsWith('@g.us')) {
-    await socket.sendMessage(sender, { text: "❗ Cette commande doit être utilisée dans un groupe." }, { quoted: msg });
-    break;
-  }
-  try {
-    const metadata = await socket.groupMetadata(from);
-    const participants = metadata.participants || [];
-    const botNumber = socket.user.id.split(':')[0] + '@s.whatsapp.net';
-    const groupAdmins = participants.filter(p => p.admin).map(p => p.id);
-
-    if (!groupAdmins.includes(sender)) {
-      await socket.sendMessage(from, { text: '❌ Seuls les admins peuvent utiliser cette commande.' }, { quoted: msg });
-      break;
-    }
-    if (!groupAdmins.includes(botNumber)) {
-      await socket.sendMessage(from, { text: '❌ Je dois être admin pour ajouter des membres.' }, { quoted: msg });
-      break;
-    }
-
-    const number = args[0];
-    if (!number) return await socket.sendMessage(from, { text: 'Usage: .add <numéro sans + ou @>' }, { quoted: msg });
-
-    const jidToAdd = number.includes('@') ? number : `${number}@s.whatsapp.net`;
-    try {
-      await socket.groupParticipantsUpdate(from, [jidToAdd], 'add');
-      await socket.sendMessage(from, { text: `✅ Ajouté: ${jidToAdd}` }, { quoted: msg });
-    } catch (e) {
-      console.error('[ERROR add]', e);
-      await socket.sendMessage(from, { text: '❌ Impossible d\'ajouter ce numéro. Vérifie le format ou les permissions.' }, { quoted: msg });
-    }
-  } catch (e) {
-    console.error('[ERROR add outer]', e);
-    await socket.sendMessage(sender, { text: `❌ Erreur lors de l'ajout.\n\n${e.message || e}` }, { quoted: msg });
-  }
-  break;
-}
-
 
 
 // ============ FIN DES COMMANDES DE GROUPE ============
@@ -7221,8 +7162,7 @@ case 'upscale': {
 }
             
 
-case 'active':
-case 'bots': {
+case 'active': {
   try {
     const sanitized = (number || '').replace(/[^0-9]/g, '');
     const cfg = await loadUserConfigFromMongo(sanitized) || {};
@@ -7320,7 +7260,7 @@ case 'bots': {
 
 // === COMMANDE FACEBOOK DOWNLOADER ===
 // === COMMANDE FACEBOOK DOWNLOADER ===
-case 'facebook': case 'fbdl': case 'fb': {
+case 'facebook': {
   try {
     // Définir jid à partir de remoteJid (disponible dans ton contexte)
     const jid = remoteJid; // ou msg.key.remoteJid selon ce qui est disponible
@@ -8038,7 +7978,6 @@ case 'swgc': {
 
 // ==================== OWNER MENU ====================
 // CASE AIDE / HELP
-case 'aide':
 case 'help': {
   if (!from) break;
 
@@ -8284,8 +8223,7 @@ END:VCARD`;
   }
   break;
 }
-case 'tiktok':
-case 'tt': {
+case 'tiktok': {
   try {
     // Définir jid et sender
     const jid = msg.key.remoteJid;
@@ -8570,9 +8508,7 @@ case 'tt': {
   break;
 }
 
-case 'gjid':
-case 'groupjid':
-case 'grouplist': {
+case 'groupjid': {
   try {
     // ✅ Owner check removed — now everyone can use it!
 
@@ -8644,9 +8580,7 @@ case 'grouplist': {
 
 
 
-case 'mediafire':
-case 'mf':
-case 'mfdl': {
+case 'mediafire': {
     try {
         const text = (msg.message.conversation || msg.message.extendedTextMessage?.text || '').trim();
         const url = text.split(" ")[1]; // .mediafire <link>
