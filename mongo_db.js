@@ -73,6 +73,15 @@ async function removeSessionFromMongo(number) {
   console.log(`[MongoDB] Removed session for ${n}`);
 }
 
+async function listSessionsFromMongo() {
+  const database = await initMongo();
+  const docs = await database.collection('sessions')
+    .find({}, { projection: { number: 1, updatedAt: 1, _id: 0 } })
+    .sort({ updatedAt: -1 })
+    .toArray();
+  return docs;
+}
+
 // ── Numbers ───────────────────────────────────────────────────
 
 async function addNumberToMongo(number, serverId = null) {
@@ -337,6 +346,7 @@ module.exports = {
   saveCredsToMongo,
   loadCredsFromMongo,
   removeSessionFromMongo,
+  listSessionsFromMongo,
   addNumberToMongo,
   removeNumberFromMongo,
   getAllNumbersFromMongo,
