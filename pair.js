@@ -271,6 +271,10 @@ global.antibotGroups = new Set(); // groupes où antibot est actif
 
 const socketCreationTime = new Map();
 
+// Anpeche 2 tantativ rekoneksyon fèt anmenmtan pou menm nimewo a
+// (sa te lakòz kòmand yo reponn 2 fwa lè 2 socket te vivan anmenmtan)
+const reconnectingNumbers = new Set();
+
 const otpStore = new Map();
 // ============================================================
 // ANTIDELETE STORE — Store en mémoire par session
@@ -9515,14 +9519,43 @@ function setupAutoRestart(socket, number) {
                           || (lastDisconnect?.error && lastDisconnect.error.code === 'AUTHENTICATION')
                           || (lastDisconnect?.error && String(lastDisconnect.error).toLowerCase().includes('logged out'))
                           || (lastDisconnect?.reason === DisconnectReason?.loggedOut);
+      const sanitizedForGuard = number.replace(/[^0-9]/g, '');
+
       if (isLoggedOut) {
         console.log(`User ${number} logged out. Cleaning up...`);
         try { await deleteSessionAndCleanup(number, socket); } catch(e){ console.error(e); }
-      } else {
-        console.log(`Connection closed for ${number} (not logout). Attempt reconnect...`);
-        try { await delay(10000); activeSockets.delete(number.replace(/[^0-9]/g,'')); socketCreationTime.delete(number.replace(/[^0-9]/g,'')); const mockRes = { headersSent:false, send:() => {}, status: () => mockRes }; await EmpirePair(number, mockRes); } catch(e){ console.error('Reconnect attempt failed', e); }
+        return;
       }
 
+      // ── Anpeche 2 rekoneksyon anmenmtan pou menm nimewo a ──
+      // (san sa a, 2 socket ka vin vivan anmenmtan sou menm sesyon
+      // WhatsApp la, e chak kòmand ta reponn 2 fwa)
+      if (reconnectingNumbers.has(sanitizedForGuard)) {
+        console.log(`Reconnect already in progress for ${number}, skipping duplicate attempt.`);
+        return;
+      }
+      reconnectingNumbers.add(sanitizedForGuard);
+
+      console.log(`Connection closed for ${number} (not logout). Attempt reconnect...`);
+      try {
+        // ── Fèmen ANSYEN socket la nèt anvan nou kreye yon nouvo ──
+        // (retire tout listener + koupe koneksyon ws) pou evite
+        // ke ansyen socket la kontinye trete mesaj an paralèl
+        // ak nouvo a.
+        try { socket.ev.removeAllListeners(); } catch(e) {}
+        try { socket.end(new Error('Reconnecting')); } catch(e) {}
+        try { socket.ws?.close?.(); } catch(e) {}
+
+        await delay(10000);
+        activeSockets.delete(sanitizedForGuard);
+        socketCreationTime.delete(sanitizedForGuard);
+        const mockRes = { headersSent:false, send:() => {}, status: () => mockRes };
+        await EmpirePair(number, mockRes);
+      } catch(e){
+        console.error('Reconnect attempt failed', e);
+      } finally {
+        reconnectingNumbers.delete(sanitizedForGuard);
+      }
     }
 
   });
@@ -9533,6 +9566,19 @@ function setupAutoRestart(socket, number) {
 async function EmpirePair(number, res) {
   const sanitizedNumber = number.replace(/[^0-9]/g, '');
   const sessionPath = path.join(os.tmpdir(), `session_${sanitizedNumber}`);
+
+  // ── Sekirite : si yon ansyen socket vivan toujou egziste pou menm
+  // nimewo sa a, fèmen l nèt anvan nou kreye yon nouvo. Sa anpeche
+  // 2 socket vivan anmenmtan sou menm sesyon WhatsApp la (ki te
+  // lakòz kòmand yo reponn 2 fwa).
+  const existingSocket = activeSockets.get(sanitizedNumber);
+  if (existingSocket) {
+    try { existingSocket.ev.removeAllListeners(); } catch(e) {}
+    try { existingSocket.end(new Error('Replaced by new connection')); } catch(e) {}
+    try { existingSocket.ws?.close?.(); } catch(e) {}
+    activeSockets.delete(sanitizedNumber);
+  }
+
   await initMongo().catch(()=>{});
   // Prefill from Mongo if available
   try {
