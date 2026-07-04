@@ -11,6 +11,9 @@ const {
   loadAdminsFromMongo,
   addAdminToMongo,
   removeAdminFromMongo,
+  removeSessionFromMongo,
+  removeNumberFromMongo,
+  listSessionsFromMongo,
 } = require('./mongo_db');
 const router = express.Router();
 
@@ -253,9 +256,7 @@ router.get('/getabout', async (req, res) => {
 router.get('/api/sessions', async (req, res) => {
   try {
     console.log('✅ API /api/sessions appelée');
-    const pairModule = require('./pair');
-    const activeSockets = pairModule.activeSockets;
-    const sessions = activeSockets ? Array.from(activeSockets.keys()).map(number => ({ number, status: 'connected' })) : [];
+    const sessions = await listSessionsFromMongo();
     res.json({ ok: true, sessions });
   } catch (err) {
     console.error('❌ Erreur API /api/sessions:', err);
@@ -279,12 +280,26 @@ router.post('/api/session/delete', async (req, res) => {
   try {
     const { number } = req.body;
     if (!number) return res.status(400).json({ ok: false, error: 'number required' });
-    
+
     const sanitized = ('' + number).replace(/[^0-9]/g, '');
     console.log(`Suppression de la session ${sanitized}`);
-    
+
+    // Fèmen sesyon an pou vre si l aktif, pou l pa rete "konekte" apre delete a
+    const pairModule = require('./pair');
+    const activeSockets = pairModule.activeSockets;
+    const running = activeSockets ? activeSockets.get(sanitized) : null;
+    if (running) {
+      try { if (typeof running.logout === 'function') await running.logout().catch(() => {}); } catch (e) {}
+      try { running.ws?.close(); } catch (e) {}
+      activeSockets.delete(sanitized);
+    }
+
+    await removeSessionFromMongo(sanitized);
+    await removeNumberFromMongo(sanitized);
+
     res.json({ ok: true, message: `Session ${sanitized} removed` });
   } catch (err) {
+    console.error('❌ Erreur API /api/session/delete:', err);
     res.status(500).json({ ok: false, error: err.message || err });
   }
 });
