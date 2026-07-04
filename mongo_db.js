@@ -190,6 +190,13 @@ async function getReactConfigForJid(jid) {
 }
 
 // ── User Config ───────────────────────────────────────────────
+// Cache an memwa: chak kòmand te konn fè yon rekèt MongoDB pou chak
+// mesaj (46 kote nan kòd la), sa te ajoute yon vòl reyaliste sou
+// chak repons. Konfig itilizatè a (non bòt, logo) chanje trè raman,
+// kidonk nou sere l pou 60 segond epi nou envalide cache a imedyatman
+// lè yon .setconfig fèt — pa gen pèt frechè, jis mwens latans.
+const _userConfigCache = new Map(); // number -> { config, ts }
+const USER_CONFIG_TTL_MS = 60 * 1000;
 
 async function setUserConfigInMongo(number, conf) {
   const n = sanitize(number);
@@ -199,13 +206,20 @@ async function setUserConfigInMongo(number, conf) {
     { $set: { number: n, config: conf, updatedAt: new Date().toISOString() } },
     { upsert: true }
   );
+  _userConfigCache.set(n, { config: conf, ts: Date.now() });
 }
 
 async function loadUserConfigFromMongo(number) {
   const n = sanitize(number);
+  const cached = _userConfigCache.get(n);
+  if (cached && (Date.now() - cached.ts) < USER_CONFIG_TTL_MS) {
+    return cached.config;
+  }
   const database = await initMongo();
   const doc = await database.collection('configs').findOne({ number: n });
-  return doc ? doc.config : null;
+  const conf = doc ? doc.config : null;
+  _userConfigCache.set(n, { config: conf, ts: Date.now() });
+  return conf;
 }
 
 // ── Restart Schedule ──────────────────────────────────────────
