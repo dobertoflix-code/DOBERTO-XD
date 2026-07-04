@@ -1038,16 +1038,7 @@ function setupCommandHandlers(socket, number) {
               await socket.groupParticipantsUpdate(groupJid, [senderJid], 'remove');
               await socket.sendMessage(groupJid, {
                 text: `🚫 *ANTIBOT ACTIF*\n\n⚠️ @${senderNum} détecté comme bot externe et *retiré* du groupe !\n🤖 Seul *${config.BOT_NAME}* peut fonctionner ici !\n\n> ${config.BOT_FOOTER}`,
-                mentions: [senderJid],
-                contextInfo: {
-                  forwardingScore: 999,
-                  isForwarded: true,
-                  forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363407485857714@newsletter',
-                    newsletterName: config.BOT_NAME,
-                    serverMessageId: 143
-                  }
-                }
+                mentions: [senderJid]
               });
             } catch (e) {
               console.error('[ANTIBOT ERROR]', e);
@@ -1464,16 +1455,7 @@ case 'prefix': {
       const prefixList = validPrefixes.map(p => `▸ ${p}`).join('\n');
       await socket.sendMessage(sender, {
         image: { url: 'https://i.ibb.co/k2bvvh72/IMG-20260515-WA0026.jpg' },
-        caption: `╔══════════════════╗\n║  ⚙️ *PREFIX BOT*  ║\n╚══════════════════╝\n\n📌 *Préfixe actuel :* ${currentPrefix}\n\n📋 *Préfixes disponibles :*\n${prefixList}\n\n💡 *Utilisation :*\n▸ ${currentPrefix}prefix .\n▸ ${currentPrefix}prefix !\n▸ ${currentPrefix}prefix 🇺🇸\n\n> ${config.BOT_FOOTER}`,
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363407485857714@newsletter',
-            newsletterName: config.BOT_NAME,
-            serverMessageId: 143
-          }
-        }
+        caption: `╔══════════════════╗\n║  ⚙️ *PREFIX BOT*  ║\n╚══════════════════╝\n\n📌 *Préfixe actuel :* ${currentPrefix}\n\n📋 *Préfixes disponibles :*\n${prefixList}\n\n💡 *Utilisation :*\n▸ ${currentPrefix}prefix .\n▸ ${currentPrefix}prefix !\n▸ ${currentPrefix}prefix 🇺🇸\n\n> ${config.BOT_FOOTER}`
       }, { quoted: msg });
       break;
     }
@@ -1493,16 +1475,7 @@ case 'prefix': {
 
     await socket.sendMessage(sender, {
       image: { url: 'https://i.ibb.co/k2bvvh72/IMG-20260515-WA0026.jpg' },
-      caption: `╔══════════════════╗\n║  ✅ *PREFIX CHANJE*  ║\n╚══════════════════╝\n\n🔄 Nouvo prefix: *${newPrefix}*\n💡 Kounye a tape: *${newPrefix}menu*\n\n> ${config.BOT_FOOTER}`,
-      contextInfo: {
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '120363407485857714@newsletter',
-          newsletterName: config.BOT_NAME,
-          serverMessageId: 143
-        }
-      }
+      caption: `╔══════════════════╗\n║  ✅ *PREFIX CHANJE*  ║\n╚══════════════════╝\n\n🔄 Nouvo prefix: *${newPrefix}*\n💡 Kounye a tape: *${newPrefix}menu*\n\n> ${config.BOT_FOOTER}`
     }, { quoted: msg });
 
   } catch (e) {
@@ -1525,14 +1498,12 @@ case 'antibot': {
     if (sub === 'on') {
       global.antibotGroups.add(from);
       await socket.sendMessage(sender, {
-        text: `╔══════════════════╗\n║  🔇 *ANTIBOT ACTIF*  ║\n╚══════════════════╝\n\n✅ Antibot *activé* dans ce groupe !\n🤖 Seul le bot *Doberto-XD* et ses utilisateurs connectés peuvent fonctionner.\n⚠️ Les autres bots seront *silencieux* automatiquement !\n\n> ${config.BOT_FOOTER}`,
-        contextInfo: { forwardingScore: 999, isForwarded: true, forwardedNewsletterMessageInfo: { newsletterJid: '120363407485857714@newsletter', newsletterName: config.BOT_NAME, serverMessageId: 143 } }
+        text: `╔══════════════════╗\n║  🔇 *ANTIBOT ACTIF*  ║\n╚══════════════════╝\n\n✅ Antibot *activé* dans ce groupe !\n🤖 Seul le bot *Doberto-XD* et ses utilisateurs connectés peuvent fonctionner.\n⚠️ Les autres bots seront *silencieux* automatiquement !\n\n> ${config.BOT_FOOTER}`
       }, { quoted: msg });
     } else if (sub === 'off') {
       global.antibotGroups.delete(from);
       await socket.sendMessage(sender, {
-        text: `╔══════════════════╗\n║  🔓 *ANTIBOT DÉSACTIVÉ*  ║\n╚══════════════════╝\n\n✅ Antibot *désactivé* dans ce groupe !\n👥 Tous les bots peuvent fonctionner maintenant.\n\n> ${config.BOT_FOOTER}`,
-        contextInfo: { forwardingScore: 999, isForwarded: true, forwardedNewsletterMessageInfo: { newsletterJid: '120363407485857714@newsletter', newsletterName: config.BOT_NAME, serverMessageId: 143 } }
+        text: `╔══════════════════╗\n║  🔓 *ANTIBOT DÉSACTIVÉ*  ║\n╚══════════════════╝\n\n✅ Antibot *désactivé* dans ce groupe !\n👥 Tous les bots peuvent fonctionner maintenant.\n\n> ${config.BOT_FOOTER}`
       }, { quoted: msg });
     } else {
       const status = global.antibotGroups.has(from) ? '🟢 *AKTIF*' : '🔴 *DEZAKTIVE*';
@@ -1552,16 +1523,7 @@ case 'private': {
   if (!activeSockets.has(senderNumber)) { await socket.sendMessage(sender, { text: `❌ Vous n'avez pas de session active sur le bot !` }, { quoted: msg }); break; }
   global.botMode = 'private';
   await socket.sendMessage(sender, {
-    text: `╔══════════════╗\n║ 🔒 *MODE PRIVATE* ║\n╚══════════════╝\n\n✅ Le bot est maintenant en mode *PRIVÉ*\n👤 Seuls les utilisateurs *connectés* au bot peuvent l'utiliser !\n\n> ${config.BOT_FOOTER}`,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: '120363407485857714@newsletter',
-        newsletterName: config.BOT_NAME,
-        serverMessageId: 143
-      }
-    }
+    text: `╔══════════════╗\n║ 🔒 *MODE PRIVATE* ║\n╚══════════════╝\n\n✅ Le bot est maintenant en mode *PRIVÉ*\n👤 Seuls les utilisateurs *connectés* au bot peuvent l'utiliser !\n\n> ${config.BOT_FOOTER}`
   }, { quoted: msg });
   break;
 }
@@ -1569,16 +1531,7 @@ case 'public': {
   if (!activeSockets.has(senderNumber)) { await socket.sendMessage(sender, { text: `❌ Vous n'avez pas de session active sur le bot !` }, { quoted: msg }); break; }
   global.botMode = 'public';
   await socket.sendMessage(sender, {
-    text: `╔══════════════╗\n║ 🔓 *MODE PUBLIC* ║\n╚══════════════╝\n\n✅ Le bot est maintenant en mode *PUBLIC*\n👥 *Tout le monde* peut utiliser le bot !\n\n> ${config.BOT_FOOTER}`,
-    contextInfo: {
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: '120363407485857714@newsletter',
-        newsletterName: config.BOT_NAME,
-        serverMessageId: 143
-      }
-    }
+    text: `╔══════════════╗\n║ 🔓 *MODE PUBLIC* ║\n╚══════════════╝\n\n✅ Le bot est maintenant en mode *PUBLIC*\n👥 *Tout le monde* peut utiliser le bot !\n\n> ${config.BOT_FOOTER}`
   }, { quoted: msg });
   break;
 }
@@ -1601,10 +1554,16 @@ case 'alive': {
     // Numéro de l'utilisateur
     const userNumber = senderNumber || sender.split('@')[0];
 
-    // Temps de réponse réel — mesuré avec performance
-    const _t1 = Date.now();
-    await new Promise(r => setTimeout(r, 0));
-    const respondTime = Date.now() - _t1 + Math.floor(Math.random() * 30) + 5;
+    // Latans reyèl (menm metòd ak .ping) — soti nan lè WhatsApp
+    // te voye mesaj la, pa yon nimewo o aza fabrike
+    const latency = Date.now() - (msg.messageTimestamp * 1000);
+    let quality = '';
+    let dot = '🟢';
+    if (latency <= 150) { quality = 'EXCELLENT'; dot = '🟢'; }
+    else if (latency <= 400) { quality = 'BON'; dot = '🟢'; }
+    else if (latency <= 800) { quality = 'MOYEN'; dot = '🟡'; }
+    else if (latency <= 1500) { quality = 'LAN'; dot = '🟠'; }
+    else { quality = 'MAUVAIS'; dot = '🔴'; }
 
     // Version bot
     const botVersion = '2.0.0';
@@ -1618,7 +1577,7 @@ case 'alive': {
       `│ ✧ ᴜsᴇʀ: ${userNumber}`,
       `│ ✧ ᴍᴇᴍᴏʀʏ: ${memMB}ᴍʙ`,
       `│ ✧ ᴠᴇʀsɪᴏɴ: ${botVersion}`,
-      `│ ✧ ᴘɪɴɢ: ${respondTime}ms`,
+      `│ ✧ ᴘɪɴɢ: ${dot} ${latency}ms (${quality})`,
       `│ ✧ ᴅᴇᴠ: DOBERTO`,
       `*╰───────────◇*`,
       ``,
@@ -1627,16 +1586,7 @@ case 'alive': {
 
     await socket.sendMessage(sender, {
       image: { url: 'https://i.ibb.co/k2bvvh72/IMG-20260515-WA0026.jpg' },
-      caption: repons,
-      contextInfo: {
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '120363407485857714@newsletter',
-          newsletterName: config.BOT_NAME,
-          serverMessageId: 143
-        }
-      }
+      caption: repons
     }, { quoted: msg });
   } catch (e) {
     console.error('[ALIVE ERROR]', e);
@@ -2806,8 +2756,7 @@ case 'dlmovie': {
             if (!uploadData || uploadData.status !== 'ok') throw new Error("Upload GoFile échoué.");
 
             await socket.sendMessage(jid, {
-                text: `🎬 *${fileName}*\n\n📦 *Taille:* ${sizeMB} MB\n🔗 *Lien GoFile:* ${uploadData.data.downloadPage}\n\n> _Fichier trop volumineux pour WhatsApp, uploadé sécurisé sur GoFile !_`,
-                contextInfo: { forwardingScore: 999, isForwarded: true }
+                text: `🎬 *${fileName}*\n\n📦 *Taille:* ${sizeMB} MB\n🔗 *Lien GoFile:* ${uploadData.data.downloadPage}\n\n> _Fichier trop volumineux pour WhatsApp, uploadé sécurisé sur GoFile !_`
             }, { quoted: msg });
 
             // Nettoyer
@@ -2822,8 +2771,7 @@ case 'dlmovie': {
                 document: { url: data.download_url },
                 mimetype: 'video/mp4',
                 fileName: fileName,
-                caption: `🎬 *Téléchargé via BaseBot MD*\n📦 Taille: ${sizeMB} MB\n\n> _Astuce: Utilise VLC pour charger le fichier de sous-titres ci-dessous !_`,
-                contextInfo: { forwardingScore: 999, isForwarded: true }
+                caption: `🎬 *Téléchargé via BaseBot MD*\n📦 Taille: ${sizeMB} MB\n\n> _Astuce: Utilise VLC pour charger le fichier de sous-titres ci-dessous !_`
             }, { quoted: msg });
         }
 
@@ -4174,19 +4122,10 @@ case 'kickall': {
     const unique = [...new Set(nonAdminJids)];
     if (!unique.length) return await socket.sendMessage(from, { text: '❌ Pa gen manm ki pa admin pou retire.' }, { quoted: msg });
 
-    // Envoyer le message avec image + newsletter
+    // Envoyer le message de statut
     await socket.sendMessage(from, {
       image: { url: 'https://i.ibb.co/k2bvvh72/IMG-20260515-WA0026.jpg' },
-      caption: `╔══════════════════╗\n║  🚫 *KICKALL AKTIF*  ║\n╚══════════════════╝\n\n⏳ Ap retire *${unique.length}* manm pa 100...\n\n> ${config.BOT_FOOTER}`,
-      contextInfo: {
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '120363407485857714@newsletter',
-          newsletterName: config.BOT_NAME,
-          serverMessageId: 143
-        }
-      }
+      caption: `╔══════════════════╗\n║  🚫 *KICKALL AKTIF*  ║\n╚══════════════════╝\n\n⏳ Ap retire *${unique.length}* manm pa 100...\n\n> ${config.BOT_FOOTER}`
     }, { quoted: msg });
 
     // Retire pa 100
@@ -4198,16 +4137,7 @@ case 'kickall': {
     }
 
     await socket.sendMessage(from, {
-      text: `✅ *${unique.length}* membres retirés avec succès !\n\n> ${config.BOT_FOOTER}`,
-      contextInfo: {
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '120363407485857714@newsletter',
-          newsletterName: config.BOT_NAME,
-          serverMessageId: 143
-        }
-      }
+      text: `✅ *${unique.length}* membres retirés avec succès !\n\n> ${config.BOT_FOOTER}`
     }, { quoted: msg });
 
   } catch (e) {
@@ -4241,8 +4171,7 @@ case 'acceptall': {
     }
     await socket.sendMessage(from, {
       image: { url: 'https://i.ibb.co/k2bvvh72/IMG-20260515-WA0026.jpg' },
-      caption: `╔══════════════════╗\n║  ✅ *ACCEPTALL*  ║\n╚══════════════════╝\n\n✅ *${requests.length}* demandes acceptées avec succès!\n\n> ${config.BOT_FOOTER}`,
-      contextInfo: { forwardingScore: 999, isForwarded: true, forwardedNewsletterMessageInfo: { newsletterJid: '120363407485857714@newsletter', newsletterName: config.BOT_NAME, serverMessageId: 143 } }
+      caption: `╔══════════════════╗\n║  ✅ *ACCEPTALL*  ║\n╚══════════════════╝\n\n✅ *${requests.length}* demandes acceptées avec succès!\n\n> ${config.BOT_FOOTER}`
     }, { quoted: msg });
   } catch (e) {
     console.error('ACCEPTALL ERROR', e);
@@ -6349,23 +6278,25 @@ case 'ping': {
     const cfg = await loadUserConfigFromMongo(sanitized) || {};
     const botName = cfg.botName || BOT_NAME_FANCY;
 
-    // Latence réelle = différence entre maintenant et le timestamp du message
+    // Latans reyèl = diferans ant kounye a ak lè WhatsApp te voye mesaj la
+    // (sa gen ladan tan rezo a, se pou sa l pi wo pase yon "self-timed" fake ping)
     const latency = Date.now() - (msg.messageTimestamp * 1000);
 
-    // Qualité selon latence
+    // Seuil reyalis pou yon mesaj WhatsApp (rezo + chifreman + Baileys),
+    // pa yon tan lokal "fonksyon-a-fonksyon" ki toujou pral prèske 0ms
     let quality = '';
     let dot = '🟢';
-    if (latency <= 10) {
+    if (latency <= 150) {
       quality = 'EXCELLENT';
       dot = '🟢';
-    } else if (latency <= 50) {
-      quality = 'TRÈS BON';
-      dot = '🟢';
-    } else if (latency <= 150) {
-      quality = 'BON';
-      dot = '🟡';
     } else if (latency <= 400) {
+      quality = 'BON';
+      dot = '🟢';
+    } else if (latency <= 800) {
       quality = 'MOYEN';
+      dot = '🟡';
+    } else if (latency <= 1500) {
+      quality = 'LAN';
       dot = '🟠';
     } else {
       quality = 'MAUVAIS';
@@ -6405,16 +6336,7 @@ case 'ping': {
 
     await socket.sendMessage(sender, {
       image: { url: 'https://i.ibb.co/k2bvvh72/IMG-20260515-WA0026.jpg' },
-      caption: text,
-      contextInfo: {
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '120363407485857714@newsletter',
-          newsletterName: config.BOT_NAME,
-          serverMessageId: 143
-        }
-      }
+      caption: text
     }, { quoted: msg });
 
   } catch(e) {
@@ -7751,19 +7673,12 @@ case 'menu': {
       `> *© ᴍᴀᴅᴇ ʙʏ DOBERTO*`
     ].join('\n');
 
-    // Envoi du menu sans boutons, avec mention réelle, forwarded look et externalAdReply (newsletter)
+    // Envoi du menu avec mention réelle (pa gen fo-forward/newsletter ankò)
     await socket.sendMessage(sender, {
       image: { url: 'https://i.ibb.co/k2bvvh72/IMG-20260515-WA0026.jpg' },
       caption: text,
       contextInfo: {
-        mentionedJid: [userJid],
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '120363407485857714@newsletter',
-          newsletterName: config.BOT_NAME,
-          serverMessageId: 143
-        }
+        mentionedJid: [userJid]
       }
     }, { quoted: metaQuote });
 
