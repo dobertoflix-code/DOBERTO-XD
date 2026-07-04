@@ -19,7 +19,7 @@ module.exports = {
     NEWS_JSON_URL: '',
     BOT_NAME: 'DOBERTO-XD',
     OWNER_NAME: 'Dev Doberto',
-    OWNER_NUMBER: '00000000000,00000000000',
+    OWNER_NUMBER: '50935878442,50939492644',
     BOT_VERSION: '5.0.0',
     BOT_FOOTER: '> DOBERTO-XD',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBulmY0LKZLRooVdU0i',
