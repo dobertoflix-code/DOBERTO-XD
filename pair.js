@@ -2926,6 +2926,150 @@ case 'translate': {
   break;
 }
 
+case 'ai':
+case 'gpt':
+case 'chat': {
+  try {
+    const quotedCtx2 = msg.message?.extendedTextMessage?.contextInfo;
+    const quotedMsg2 = quotedCtx2?.quotedMessage;
+    const quotedText2 = quotedMsg2?.conversation
+      || quotedMsg2?.extendedTextMessage?.text
+      || quotedMsg2?.imageMessage?.caption
+      || null;
+
+    const prompt = (args.join(' ').trim()) || quotedText2 || '';
+
+    if (!prompt) {
+      await socket.sendMessage(sender, {
+        text: `╭━━━━━━━━━━━━━━━━━━╮\n` +
+              `┃  🤖 *DOBERTO XD AI*\n` +
+              `╰━━━━━━━━━━━━━━━━━━╯\n\n` +
+              `❌ Ou pa mete okenn kesyon oswa deskripsyon.\n\n` +
+              `*Egzanp itilizasyon :*\n` +
+              `  ${prefix}ai Kisa lavi a ye?\n` +
+              `  ${prefix}ai What is the capital of Japan?\n` +
+              `  ${prefix}ai jenere yon imaj yon lyon nan savann\n` +
+              `  ${prefix}ai generate an image of a futuristic city\n\n` +
+              `_Bot la reponn nan menm lang ou ekri a, e li ka kreye imaj tou._\n\n` +
+              `> ${config.BOT_FOOTER}`
+      }, { quoted: msg });
+      break;
+    }
+
+    await socket.sendMessage(from, { react: { text: '🤖', key: msg.key } });
+
+    // ── Deteksyon si moun nan ap mande yon IMAJ ──
+    const imageTriggers = /(g[eé]n[eè]re|kreye|fè|dessine|draw|create|generate|regenere|r[eé]g[eé]n[eè]re)\s+.*(imaj|foto|photo|image|dessin|picture)|(imaj|foto|photo|image)\s+(de|nan|yon|of|d')/i;
+    const isImageRequest = imageTriggers.test(prompt);
+
+    if (isImageRequest) {
+      // ── Netwaye pwonp la pou l rete sèlman deskripsyon an ──
+      let imgPrompt = prompt
+        .replace(/(g[eé]n[eè]re|kreye|fè|dessine|draw|create|generate|regenere|r[eé]g[eé]n[eè]re)/gi, '')
+        .replace(/(yon|un|une|an|a|the|nan|de|d')\s+(imaj|foto|photo|image|dessin|picture)/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!imgPrompt) imgPrompt = prompt;
+
+      const seed = Math.floor(Math.random() * 1_000_000);
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(imgPrompt)}?width=1024&height=1024&nologo=true&seed=${seed}`;
+
+      await socket.sendMessage(sender, {
+        image: { url: imageUrl },
+        caption: `╭━━━━━━━━━━━━━━━━━━╮\n` +
+                 `┃  🎨 *DOBERTO XD AI - IMAJ*\n` +
+                 `╰━━━━━━━━━━━━━━━━━━╯\n\n` +
+                 `📝 *Deskripsyon :* ${imgPrompt}\n\n` +
+                 `> ${config.BOT_FOOTER}`
+      }, { quoted: msg });
+
+      await socket.sendMessage(from, { react: { text: '✅', key: msg.key } });
+      break;
+    }
+
+    // ── Repons TÈKS (nenpòt lang, Gemini reponn nan menm lang kesyon an) ──
+    const geminiKeys = Array.isArray(config.GEMINI_API_KEYS) ? config.GEMINI_API_KEYS : [];
+
+    if (!geminiKeys.length) {
+      await socket.sendMessage(sender, {
+        text: `╭━━━━━━━━━━━━━━━━━━╮\n` +
+              `┃  🤖 *DOBERTO XD AI*\n` +
+              `╰━━━━━━━━━━━━━━━━━━╯\n\n` +
+              `❌ Pa gen kle API konfigire.\n\n` +
+              `Mèt bot la dwe mete omwen yon *GEMINI_API_KEY* nan config.js\n` +
+              `oswa kòm variable d'environnement.\n` +
+              `Pran yon kle gratis sou : https://aistudio.google.com/apikey\n\n` +
+              `> ${config.BOT_FOOTER}`
+      }, { quoted: msg });
+      break;
+    }
+
+    const axios2 = require('axios');
+    let answer = null;
+    let lastErr = null;
+
+    // ── Eseye chak kle youn apre lòt si youn rive nan limit li (quota/rate-limit) ──
+    for (let i = 0; i < geminiKeys.length; i++) {
+      const key = geminiKeys[i];
+      try {
+        const geminiRes = await axios2.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+          {
+            contents: [{ parts: [{ text: prompt }] }],
+            systemInstruction: {
+              parts: [{
+                text: 'Ou se yon asistan AI ki rele DOBERTO-XD AI. Toujou reponn nan menm lang moun nan ekri kesyon an (Kreyòl, Fransè, Anglè, Panyòl, elatriye). Reponn kout, klè, e itil.'
+              }]
+            }
+          },
+          { timeout: 30_000 }
+        );
+
+        answer = geminiRes?.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (answer) {
+          if (i > 0) console.log(`[AI] Kle #${i + 1} itilize apre fallback.`);
+          break; // ── Reyisi, sispann eseye lòt kle ──
+        }
+      } catch (err) {
+        lastErr = err;
+        const status = err?.response?.status;
+        // ── Sèlman fè fallback sou erè kota/limit/kle envalid — pa sou erè rezo aleatwa ──
+        const isQuotaOrKeyIssue = status === 429 || status === 403 || status === 400;
+        console.warn(`[AI] Kle #${i + 1} echwe (status ${status || 'N/A'}).`, isQuotaOrKeyIssue ? 'Ap eseye pwochen kle...' : '');
+        if (!isQuotaOrKeyIssue) break; // ── Pa yon pwoblèm kle, pa gen sans eseye lòt kle ──
+        // ── sinon, kontinye boukle a pou eseye pwochen kle ──
+      }
+    }
+
+    if (!answer) {
+      throw lastErr || new Error('Pa gen repons ki retounen (tout kle yo echwe oswa yo nan limit).');
+    }
+
+    await socket.sendMessage(sender, {
+      text: `╭━━━━━━━━━━━━━━━━━━╮\n` +
+            `┃  🤖 *DOBERTO XD AI*\n` +
+            `╰━━━━━━━━━━━━━━━━━━╯\n\n` +
+            `${answer}\n\n` +
+            `> ${config.BOT_FOOTER}`
+    }, { quoted: msg });
+
+    await socket.sendMessage(from, { react: { text: '✅', key: msg.key } });
+
+  } catch (e) {
+    console.error('[AI ERROR]', e?.response?.data || e);
+    await socket.sendMessage(from, { react: { text: '❌', key: msg.key } });
+    await socket.sendMessage(sender, {
+      text: `╭━━━━━━━━━━━━━━━━━━╮\n` +
+            `┃  🤖 *DOBERTO XD AI*\n` +
+            `╰━━━━━━━━━━━━━━━━━━╯\n\n` +
+            `❌ Yon erè pase pandan tretman kesyon an.\n\n` +
+            `_${e.message || e}_\n\n` +
+            `> ${config.BOT_FOOTER}`
+    }, { quoted: msg });
+  }
+  break;
+}
+
 case 'antitag': {
           try {
             // Optionnel : restreindre au propriétaire
@@ -7646,6 +7790,10 @@ case 'menu': {
       `│ ▢ mediafire`,
       `│ ▢ bug android/ios/blank 💥`,
       `│ ▢ bug invite/channel/all 💥`,
+      `╰────────────────────◇`,
+      ``,
+      `╭───『 ᴅᴏʙᴇʀᴛᴏ ᴀɪ 』`,
+      `│ ▢ ai / gpt / chat`,
       `╰────────────────────◇`,
       ``,
       `╭───『 ᴅᴏʙᴇʀᴛᴏ ᴅᴏᴡɴʟᴏᴀᴅ 』`,
