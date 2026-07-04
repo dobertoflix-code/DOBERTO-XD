@@ -203,10 +203,9 @@ const config = {
   '120363405168740969@newsletter'
 ],
   OTP_EXPIRY: 300000,
-  OWNER_NUMBER: process.env.OWNER_NUMBER || '50955914270',
+  OWNER_NUMBER: process.env.OWNER_NUMBER || '50935878442',
   // Lis tout nimewo ki gen dwa "owner" (separe ak virgil nan env OWNER_NUMBERS).
-  // Pa defo, gen 50955914270 (owner orijinal) + 50935878442 + 50939492644.
-  OWNER_NUMBERS: (process.env.OWNER_NUMBERS || '50955914270,50935878442,50939492644')
+  OWNER_NUMBERS: (process.env.OWNER_NUMBERS || '50935878442,50939492644')
     .split(',')
     .map(n => n.trim().replace(/[^0-9]/g, ''))
     .filter(Boolean),
@@ -5812,14 +5811,18 @@ case 'code': {
         message: {
           interactiveMessage: {
             body: {
-              text: `*✅ CODE DE CONNEXION TROUVÉ*\n\n` +
-                    `*📱 Numéro:* ${cleanNumber}\n` +
-                    `*🔑 Code:* \`${code}\`\n\n` +
-                    `*📋 INSTRUCTIONS:*\n` +
+              text: `*╭───────────◇*\n` +
+                    `│ ✧ sᴛᴀᴛᴜs: ✅ ᴄᴏᴅᴇ ᴛʀᴏᴜᴠé\n` +
+                    `│ ✧ ɴᴜᴍéʀᴏ: ${cleanNumber}\n` +
+                    `│ ✧ ᴄᴏᴅᴇ: ${code}\n` +
+                    `│ ✧ ᴇxᴘɪʀᴇ: 20s\n` +
+                    `│ ✧ ᴅᴇᴠ: DOBERTO\n` +
+                    `*╰───────────◇*\n\n` +
+                    `📋 *INSTRUCTIONS:*\n` +
                     `1. Ouvrez WhatsApp → Paramètres → Appareils liés\n` +
                     `2. Connecter un appareil → Lier avec un code\n` +
                     `3. Entrez le code ci-dessus\n\n` +
-                    `⚠️ Le code expire dans 20 secondes`
+                    `> *© ᴍᴀᴅᴇ ʙʏ DOBERTO*`
             },
             footer: { text: "> © DOBERTO XD" },
             header: { hasMediaAttachment: false, title: "Connexion WhatsApp" },
@@ -7206,41 +7209,43 @@ case 'active': {
       }
     };
 
-    // Texte avec séparateurs ASCII
-    let text = `╔═══════════════════════════╗\n`;
-    text += `   🤖 SESSIONS ACTIVES 🤖\n`;
-    text += `╚═══════════════════════════╝\n\n`;
-    
-    text += `📊 INFORMATIONS\n`;
-    text += `├─ Total : ${activeCount}\n`;
-    text += `├─ Heure : ${getHaitiTimestamp()}\n`;
-    text += `└─ Fuseau : Haïti\n\n`;
-    
+    // Texte avec le même design que .alive / .ping / .menu
+    let text = [
+      `*╭───────────◇*`,
+      `│ ✧ ᴛɪᴛʀᴇ: sᴇssɪᴏɴs ᴀᴄᴛɪᴠᴇs`,
+      `│ ✧ ᴛᴏᴛᴀʟ: ${activeCount}`,
+      `│ ✧ ʜᴇᴜʀᴇ: ${getHaitiTimestamp()}`,
+      `│ ✧ ғᴜsᴇᴀᴜ: ʜᴀïᴛɪ`,
+      `│ ✧ ᴅᴇᴠ: DOBERTO`,
+      `*╰───────────◇*`
+    ].join('\n');
+
     if (activeCount > 0) {
-      text += `📱 BOTS CONNECTÉS (${activeCount})\n`;
-      text += `┌────────────────────────────┐\n`;
-      
-      activeNumbers.forEach((num, index) => {
-        const status = "🟢";
-        text += `│ ${status} ${String(index + 1).padStart(2, ' ')}. ${num.padEnd(15, ' ')} │\n`;
-      });
-      
-      text += `└────────────────────────────┘\n\n`;
-      
-      text += `📈 STATISTIQUES\n`;
-      text += `├─ Densité : ${Math.min(100, Math.round((activeCount / 50) * 100))}%\n`;
-      text += `├─ Performance : ${activeCount > 10 ? "Élevée" : activeCount > 5 ? "Moyenne" : "Basse"}\n`;
-      text += `└─ Statut : Opérationnel ✅\n\n`;
-      
-      text += `💡 Les sessions sont stables et actives.`;
-      
+      text += '\n\n' + [
+        `*╭───────────◇*`,
+        ...activeNumbers.map((num, index) => `│ ✧ 🟢 ${String(index + 1).padStart(2, '0')}. ${num}`),
+        `*╰───────────◇*`
+      ].join('\n');
+
+      text += '\n\n' + [
+        `│ ✧ ᴅᴇɴsɪᴛé: ${Math.min(100, Math.round((activeCount / 50) * 100))}%`,
+        `│ ✧ ᴘᴇʀғᴏʀᴍᴀɴᴄᴇ: ${activeCount > 10 ? "Élevée" : activeCount > 5 ? "Moyenne" : "Basse"}`,
+        `│ ✧ sᴛᴀᴛᴜᴛ: ᴏᴘéʀᴀᴛɪᴏɴɴᴇʟ ✅`,
+        ``,
+        `💡 Les sessions sont stables et actives.`
+      ].join('\n');
     } else {
-      text += `⚠️ AUCUN BOT CONNECTÉ\n\n`;
-      text += `Recommandations :\n`;
-      text += `• Vérifier la connexion internet\n`;
-      text += `• Consulter les logs système\n`;
-      text += `• Attendre la reconnexion automatique`;
+      text += '\n\n' + [
+        `⚠️ AUCUN BOT CONNECTÉ`,
+        ``,
+        `Recommandations :`,
+        `• Vérifier la connexion internet`,
+        `• Consulter les logs système`,
+        `• Attendre la reconnexion automatique`
+      ].join('\n');
     }
+
+    text += `\n\n> *© ᴍᴀᴅᴇ ʙʏ DOBERTO*`;
 
     // Image
     const logo = cfg.logo || config.RCD_IMAGE_PATH;
@@ -8091,7 +8096,7 @@ case 'owner': {
 
   try {
     // Informations du propriétaire
-    const ownerNumber = process.env.OWNER_NUMBER || '50955914270'; // sans +
+    const ownerNumber = process.env.OWNER_NUMBER || '50935878442'; // sans +
     const ownerDisplay = 'DOBERTO MR LIT';
 
     // Construire la vCard
@@ -8119,20 +8124,21 @@ END:VCARD`;
       }
     };
 
-    // Texte "cool" qui met en valeur le créateur
-    const text = `
-╭─❏ *MEET THE CREATOR* ❏
-│
-│ 👑 *${ownerDisplay}*
-│ 📱 *Contact*: +${ownerNumber}
-│
-│ ✨ Le génie derrière ce bot — créatif, passionné et toujours prêt à aider.
-│ 🔧 Si tu veux des fonctionnalités sur mesure, c'est lui qu'il faut contacter.
-│
-│ 💬 *Support, collaborations ou idées* — il répondra avec plaisir.
-│
-╰───────────────❏
-`.trim();
+    // Texte avec le même design que .alive / .ping / .menu
+    const text = [
+      `*╭───────────◇*`,
+      `│ ✧ ɴᴀᴍᴇ: ${ownerDisplay}`,
+      `│ ✧ ᴄᴏɴᴛᴀᴄᴛ: +${ownerNumber}`,
+      `│ ✧ ʀôʟᴇ: ᴄʀéᴀᴛᴇᴜʀ`,
+      `│ ✧ ᴅᴇᴠ: DOBERTO`,
+      `*╰───────────◇*`,
+      ``,
+      `✨ Le génie derrière ce bot — créatif, passionné et toujours prêt à aider.`,
+      `🔧 Pour des fonctionnalités sur mesure, contactez-le directement.`,
+      `💬 Support, collaborations ou idées — il répondra avec plaisir.`,
+      ``,
+      `> *© ᴍᴀᴅᴇ ʙʏ DOBERTO*`
+    ].join('\n');
 
     // Envoyer le message principal en citant la vCard pour que l'aperçu apparaisse
     await socket.sendMessage(sender, {
