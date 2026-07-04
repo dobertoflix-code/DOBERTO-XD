@@ -40,42 +40,36 @@ function getDate() {
 async function buildDefaultWelcome(socket, userJid, userName, groupName, from) {
   const { memberCount, adminCount } = await getGroupInfo(socket, from);
   return [
-    `┌──────────────────────●`,
-    `│☐ *BOT: DOBERTO-XD*`,
-    `└──────────────────────●`,
+    `*╭───────────◇*`,
+    `│ ✧ ʙᴏᴛ: DOBERTO-XD`,
+    `│ ✧ ɢʀᴏᴜᴘ: ${groupName}`,
+    `│ ✧ ᴀᴅᴍɪɴ: ${adminCount}`,
+    `│ ✧ ᴅᴀᴛᴇ: ${getDate()}`,
+    `│ ✧ ᴍᴇᴍʙᴇʀs: ${memberCount}`,
+    `│ ✧ ᴜsᴇʀ: @${userName}`,
+    `*╰───────────◇*`,
     ``,
-    `┌──────────────────────●`,
-    `│☐ *GROUP:* ${groupName}`,
-    `│☐ *ADMIN:* ${adminCount}`,
-    `│☐ *DATE:* ${getDate()}`,
-    `│☐ *MEMBRES:* ${memberCount}`,
-    `│☐ *USER:* @${userName}`,
-    `└──────────────────────●`,
+    `👋 Byenveni nan *${groupName}* !`,
     ``,
-    `👋 Bienvenue dans *${groupName}* !`,
-    ``,
-    `| *PROPULSÉ PAR DOBERTO-XD*`
+    `> *© ᴍᴀᴅᴇ ʙʏ DOBERTO*`
   ].join('\n');
 }
 
 async function buildDefaultGoodbye(socket, userJid, userName, groupName, from) {
   const { memberCount, adminCount } = await getGroupInfo(socket, from);
   return [
-    `┌──────────────────────●`,
-    `│☐ *BOT: DOBERTO-XD*`,
-    `└──────────────────────●`,
+    `*╭───────────◇*`,
+    `│ ✧ ʙᴏᴛ: DOBERTO-XD`,
+    `│ ✧ ɢʀᴏᴜᴘ: ${groupName}`,
+    `│ ✧ ᴀᴅᴍɪɴ: ${adminCount}`,
+    `│ ✧ ᴅᴀᴛᴇ: ${getDate()}`,
+    `│ ✧ ᴍᴇᴍʙᴇʀs: ${memberCount}`,
+    `│ ✧ ᴜsᴇʀ: @${userName}`,
+    `*╰───────────◇*`,
     ``,
-    `┌──────────────────────●`,
-    `│☐ *GROUP:* ${groupName}`,
-    `│☐ *ADMIN:* ${adminCount}`,
-    `│☐ *DATE:* ${getDate()}`,
-    `│☐ *MEMBRES:* ${memberCount}`,
-    `│☐ *USER:* @${userName}`,
-    `└──────────────────────●`,
+    `✋ *@${userName}* kite *${groupName}*`,
     ``,
-    `✋ *@${userName}* a quitté *${groupName}*`,
-    ``,
-    `| *PROPULSÉ PAR DOBERTO-XD*`
+    `> *© ᴍᴀᴅᴇ ʙʏ DOBERTO*`
   ].join('\n');
 }
 
