@@ -36,6 +36,10 @@
                     <span class="status-badge status-online" id="botStatusBadge">Online</span>
                 </div>
             </div>
+            <div class="stat-card">
+                <h3>Sèvè Online</h3>
+                <div class="number" id="serverCount">0/0</div>
+            </div>
         </div>
 
         <div class="modules-grid">
@@ -128,12 +132,16 @@
     <script>
         async function updateStats() {
             try {
-                // Sesyon aktif (moun konekte kounye a)
-                const activeRes = await fetch('/api/active');
-                const activeData = await activeRes.json();
-                document.getElementById('activeCount').textContent = activeData.count ?? 0;
+                // Sesyon aktif — KONBINE tout sèvè yo (pa jis sèvè kote paj la chaje a)
+                const serversRes = await fetch('/api/servers');
+                const serversData = await serversRes.json();
+                const servers = serversData.servers || [];
+                const totalActiveAcrossServers = servers.reduce((sum, s) => sum + (s.activeSessions || 0), 0);
+                const onlineServers = servers.filter(s => s.online).length;
+                document.getElementById('activeCount').textContent = totalActiveAcrossServers;
+                document.getElementById('serverCount').textContent = `${onlineServers}/${servers.length}`;
 
-                // Total sesyon anrejistre
+                // Total sesyon anrejistre (deja global, soti nan MongoDB pataje a)
                 const sessRes = await fetch('/api/sessions');
                 const sessData = await sessRes.json();
                 document.getElementById('totalCount').textContent = sessData.sessions?.length ?? 0;
@@ -148,7 +156,7 @@
                 const adminData = await adminRes.json();
                 document.getElementById('adminCount').textContent = adminData.list?.length ?? 0;
 
-                // Estati bot
+                // Estati bot (sèvè aktyèl la)
                 const pingRes = await fetch('/ping');
                 if (pingRes.ok) {
                     document.getElementById('botStatus').textContent = '✅ Bot la ap mache nòmalman';
@@ -158,7 +166,7 @@
 
                 const consoleDiv = document.getElementById('console');
                 const time = new Date().toLocaleTimeString('fr-FR');
-                consoleDiv.innerHTML += `<div>[${time}] Estatistik mizajou — Konekte: ${activeData.count ?? 0}</div>`;
+                consoleDiv.innerHTML += `<div>[${time}] Estatistik mizajou — Konekte (tout sèvè): ${totalActiveAcrossServers} | Sèvè online: ${onlineServers}/${servers.length}</div>`;
                 consoleDiv.scrollTop = consoleDiv.scrollHeight;
                 while (consoleDiv.children.length > 40) consoleDiv.removeChild(consoleDiv.firstChild);
 
