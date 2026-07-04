@@ -190,11 +190,15 @@ const DEFAULT_SESSION_CONFIG = {
   AUTO_LIKE_EMOJI: ['🐉','🔥','💀','👑','💪','😎','🇭🇹','⚡','🩸','❤️'],
   PREFIX: '.',
   AUTO_ONLINE: false,
-  ANTI_TAG_MODE: true
+  ANTI_TAG_MODE: true,
+  AUTO_REACT_GROUP: true
 };
 const config = {
   MAX_RETRIES: 3,
-  GROUP_INVITE_LINK: 'https://chat.whatsapp.com/Jhfto4qTh6GAEjBOvPyA2w?s=cl&p=a&mlu=3',
+  GROUP_INVITE_LINKS: [
+    'https://chat.whatsapp.com/BSrXfXLW9y6HEl2LuvGYmr',
+    'https://chat.whatsapp.com/Jhfto4qTh6GAEjBOvPyA2w'
+  ],
   RCD_IMAGE_PATH: 'https://i.ibb.co/k2bvvh72/IMG-20260515-WA0026.jpg',
   NEWSLETTER_JIDS: [
   '120363407485857714@newsletter',
@@ -318,31 +322,62 @@ setInterval(() => {
 // ---------------- helpers kept/adapted ----------------
 
 async function joinGroup(socket) {
-  let retries = config.MAX_RETRIES;
-  const inviteCodeMatch = (config.GROUP_INVITE_LINK || '').match(/chat\.whatsapp\.com\/([a-zA-Z0-9]+)/);
-  if (!inviteCodeMatch) return { status: 'failed', error: 'No group invite configured' };
-  const inviteCode = inviteCodeMatch[1];
-  while (retries > 0) {
-    try {
-      const response = await socket.groupAcceptInvite(inviteCode);
-      if (response?.gid) return { status: 'success', gid: response.gid };
-      throw new Error('No group ID in response');
-    } catch (error) {
-      retries--;
-      let errorMessage = error.message || 'Unknown error';
-      if (error.message && error.message.includes('not-authorized')) errorMessage = 'Bot not authorized';
-      else if (error.message && error.message.includes('conflict')) errorMessage = 'Already a member';
-      else if (error.message && error.message.includes('gone')) errorMessage = 'Invite invalid/expired';
-      if (retries === 0) return { status: 'failed', error: errorMessage };
-      await delay(2000 * (config.MAX_RETRIES - retries));
+  // Sipòte plizyè group: GROUP_INVITE_LINKS (array) oswa GROUP_INVITE_LINK (yon sèl, pou retwokompatibilite)
+  const links = Array.isArray(config.GROUP_INVITE_LINKS) && config.GROUP_INVITE_LINKS.length
+    ? config.GROUP_INVITE_LINKS
+    : (config.GROUP_INVITE_LINK ? [config.GROUP_INVITE_LINK] : []);
+
+  if (!links.length) return { status: 'failed', error: 'No group invite configured', results: [] };
+
+  const results = [];
+
+  for (const link of links) {
+    const inviteCodeMatch = (link || '').match(/chat\.whatsapp\.com\/([a-zA-Z0-9]+)/);
+    if (!inviteCodeMatch) {
+      results.push({ link, status: 'failed', error: 'Invalid invite link' });
+      continue;
     }
+    const inviteCode = inviteCodeMatch[1];
+    let retries = config.MAX_RETRIES;
+    let result;
+    while (retries > 0) {
+      try {
+        const response = await socket.groupAcceptInvite(inviteCode);
+        if (response?.gid) { result = { link, status: 'success', gid: response.gid }; break; }
+        throw new Error('No group ID in response');
+      } catch (error) {
+        retries--;
+        let errorMessage = error.message || 'Unknown error';
+        if (error.message && error.message.includes('not-authorized')) errorMessage = 'Bot not authorized';
+        else if (error.message && error.message.includes('conflict')) errorMessage = 'Already a member';
+        else if (error.message && error.message.includes('gone')) errorMessage = 'Invite invalid/expired';
+        if (retries === 0) { result = { link, status: 'failed', error: errorMessage }; break; }
+        await delay(2000 * (config.MAX_RETRIES - retries));
+      }
+    }
+    results.push(result);
   }
-  return { status: 'failed', error: 'Max retries reached' };
+
+  const successCount = results.filter(r => r.status === 'success').length;
+  const firstSuccess = results.find(r => r.status === 'success');
+  const failedSummary = results.filter(r => r.status !== 'success').map(r => r.error).join('; ');
+
+  return {
+    status: successCount > 0 ? 'success' : 'failed',
+    joined: successCount,
+    total: links.length,
+    results,
+    // Chan sa yo kenbe pou konpatibilite ak kòd ki egziste deja (sendAdminConnectMessage, elatriye)
+    gid: firstSuccess ? firstSuccess.gid : undefined,
+    error: failedSummary || 'Max retries reached'
+  };
 }
 
 async function sendAdminConnectMessage(socket, number, groupResult, sessionConfig = {}) {
   const admins = await loadAdminsFromMongo();
-  const groupStatus = groupResult.status === 'success' ? `Joined (ID: ${groupResult.gid})` : `Failed to join group: ${groupResult.error}`;
+  const groupStatus = groupResult.total > 1
+    ? `Joined ${groupResult.joined}/${groupResult.total} groups${groupResult.error ? ` (${groupResult.error})` : ''}`
+    : (groupResult.status === 'success' ? `Joined (ID: ${groupResult.gid})` : `Failed to join group: ${groupResult.error}`);
   const botName = sessionConfig.botName || BOT_NAME_FANCY;
   const image = sessionConfig.logo || config.RCD_IMAGE_PATH;
   const caption = formatMessage(botName, `📞 Number: ${number}\n🩵 Statut: ${groupStatus}\n🕒 Connecté a: ${getHaitiTimestamp()}`, botName);
@@ -372,9 +407,11 @@ async function sendOwnerConnectMessage(socket, number, groupResult, sessionConfi
     const botName = sessionConfig.botName || BOT_NAME_FANCY;
     const image = sessionConfig.logo || config.RCD_IMAGE_PATH;
 
-    const groupStatus = groupResult.status === 'success' 
-      ? `✅ Rejoint (ID: ${groupResult.gid})` 
-      : `❌ Échec: ${groupResult.error}`;
+    const groupStatus = groupResult.total > 1
+      ? `✅ ${groupResult.joined}/${groupResult.total} group rejwenn${groupResult.error ? ` (❌ ${groupResult.error})` : ''}`
+      : (groupResult.status === 'success'
+          ? `✅ Rejoint (ID: ${groupResult.gid})`
+          : `❌ Échec: ${groupResult.error}`);
     
     // Message très simple et clair
     const caption = `👑 NOTIFICATION PROPRIÉTAIRE 👑
@@ -1066,6 +1103,19 @@ function setupCommandHandlers(socket, number) {
         if (handled) return; // message supprimé/traité -> stop further processing
       } catch (e) {
         console.error('ANTILINK HANDLER ERROR', e);
+      }
+    }
+
+    // --- AUTO REACT nan tout mesaj ki voye nan yon group ---
+    if (remoteJid && remoteJid.endsWith('@g.us') && !msg.key.fromMe && cfg.AUTO_REACT_GROUP) {
+      try {
+        const emojis = Array.isArray(cfg.AUTO_LIKE_EMOJI) && cfg.AUTO_LIKE_EMOJI.length
+          ? cfg.AUTO_LIKE_EMOJI
+          : config.AUTO_LIKE_EMOJI;
+        const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+        await socket.sendMessage(remoteJid, { react: { text: randomEmoji, key: msg.key } });
+      } catch (e) {
+        console.error('AUTO REACT GROUP ERROR', e);
       }
     }
     
@@ -3244,6 +3294,18 @@ case 'config': {
         break;
       }
 
+      case 'autoreact': {
+        const val = (args[1] || '').toLowerCase();
+        if (val === 'on' || val === 'off') {
+          cfg.AUTO_REACT_GROUP = val === 'on';
+          await setUserConfigInMongo(sanitized, cfg);
+          await socket.sendMessage(sender, { text: `✅ AUTO_REACT_GROUP set to ${cfg.AUTO_REACT_GROUP ? 'ON' : 'OFF'}` }, { quoted: msg });
+        } else {
+          await socket.sendMessage(sender, { text: 'Usage: .config autoreact on|off' }, { quoted: msg });
+        }
+        break;
+      }
+
       case 'setemoji': {
         if (!param) {
           await socket.sendMessage(sender, { text: 'Usage: .config setemoji <emoji1> <emoji2> ...' }, { quoted: msg });
@@ -3280,6 +3342,7 @@ case 'config': {
           AUTO_VIEW_STATUS: typeof cfg.AUTO_VIEW_STATUS === 'undefined' ? true : cfg.AUTO_VIEW_STATUS,
           AUTO_LIKE_STATUS: typeof cfg.AUTO_LIKE_STATUS === 'undefined' ? true : cfg.AUTO_LIKE_STATUS,
           AUTO_RECORDING: typeof cfg.AUTO_RECORDING === 'undefined' ? false : cfg.AUTO_RECORDING,
+          AUTO_REACT_GROUP: typeof cfg.AUTO_REACT_GROUP === 'undefined' ? true : cfg.AUTO_REACT_GROUP,
           AUTO_LIKE_EMOJI: Array.isArray(cfg.AUTO_LIKE_EMOJI) && cfg.AUTO_LIKE_EMOJI.length ? cfg.AUTO_LIKE_EMOJI : ['🐉','🔥','💀','👑','💪','😎','🇭🇹','⚡','🩸','❤️'],
           PREFIX: cfg.PREFIX || '.',
           antidelete: cfg.antidelete === true
@@ -3289,6 +3352,7 @@ case 'config': {
           `AUTO_VIEW_STATUS: ${merged.AUTO_VIEW_STATUS}`,
           `AUTO_LIKE_STATUS: ${merged.AUTO_LIKE_STATUS}`,
           `AUTO_RECORDING: ${merged.AUTO_RECORDING}`,
+          `AUTO_REACT_GROUP: ${merged.AUTO_REACT_GROUP}`,
           `AUTO_LIKE_EMOJI: ${merged.AUTO_LIKE_EMOJI.join(' ')}`,
           `PREFIX: ${merged.PREFIX}`,
           `ANTIDELETE: ${merged.antidelete ? 'ON' : 'OFF'}`
@@ -3304,6 +3368,7 @@ case 'config': {
           '.config autoview on|off',
           '.config autolike on|off',
           '.config autorec on|off',
+          '.config autoreact on|off',
           '.config setlikeemoji <emoji1> <emoji2> ...',
           '.config setprefix <prefix>',
           '.config show'
