@@ -3,7 +3,15 @@ const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const config = require('./config');
-const { listServerStatuses } = require('./mongo_db');
+const {
+  listServerStatuses,
+  addNewsletterToMongo,
+  removeNewsletterFromMongo,
+  listNewslettersFromMongo,
+  loadAdminsFromMongo,
+  addAdminToMongo,
+  removeAdminFromMongo,
+} = require('./mongo_db');
 const router = express.Router();
 
 // ========== LIST DES SÈVÈ DISPONIB (pou paj "Choose a Server") ==========
@@ -70,10 +78,18 @@ router.post('/newsletter/add', async (req, res) => {
     const { jid, emojis } = req.body;
     if (!jid) return res.status(400).json({ error: 'jid required' });
     if (!jid.endsWith('@newsletter')) return res.status(400).json({ error: 'Invalid newsletter jid' });
-    
-    console.log('Newsletter add:', { jid, emojis });
+
+    const emojiList = Array.isArray(emojis)
+      ? emojis
+      : (typeof emojis === 'string' && emojis.trim()
+          ? emojis.split(',').map(e => e.trim()).filter(Boolean)
+          : []);
+
+    await addNewsletterToMongo(jid, emojiList);
+    console.log('Newsletter add:', { jid, emojis: emojiList });
     res.status(200).json({ status: 'ok', jid });
   } catch (e) { 
+    console.error('Newsletter add error:', e);
     res.status(500).json({ error: e.message || e }); 
   }
 });
@@ -82,19 +98,23 @@ router.post('/newsletter/remove', async (req, res) => {
   try {
     const { jid } = req.body;
     if (!jid) return res.status(400).json({ error: 'jid required' });
-    
+
+    await removeNewsletterFromMongo(jid);
     console.log('Newsletter remove:', jid);
     res.status(200).json({ status: 'ok', jid });
   } catch (e) { 
+    console.error('Newsletter remove error:', e);
     res.status(500).json({ error: e.message || e }); 
   }
 });
 
 router.get('/newsletter/list', async (req, res) => {
   try {
-    const list = []; 
+    const docs = await listNewslettersFromMongo();
+    const list = (docs || []).map(d => ({ jid: d.jid, emojis: d.emojis || [] }));
     res.status(200).json({ status: 'ok', channels: list });
   } catch (e) { 
+    console.error('Newsletter list error:', e);
     res.status(500).json({ error: e.message || e }); 
   }
 });
@@ -104,10 +124,12 @@ router.post('/admin/add', async (req, res) => {
   try {
     const { jid } = req.body;
     if (!jid) return res.status(400).json({ error: 'jid required' });
-    
+
+    await addAdminToMongo(jid);
     console.log('Admin add:', jid);
     res.status(200).json({ status: 'ok', jid });
   } catch (e) { 
+    console.error('Admin add error:', e);
     res.status(500).json({ error: e.message || e }); 
   }
 });
@@ -116,19 +138,22 @@ router.post('/admin/remove', async (req, res) => {
   try {
     const { jid } = req.body;
     if (!jid) return res.status(400).json({ error: 'jid required' });
-    
+
+    await removeAdminFromMongo(jid);
     console.log('Admin remove:', jid);
     res.status(200).json({ status: 'ok', jid });
   } catch (e) { 
+    console.error('Admin remove error:', e);
     res.status(500).json({ error: e.message || e }); 
   }
 });
 
 router.get('/admin/list', async (req, res) => {
   try {
-    const list = [];
-    res.status(200).json({ status: 'ok', admins: list });
+    const list = await loadAdminsFromMongo();
+    res.status(200).json({ status: 'ok', admins: list || [] });
   } catch (e) { 
+    console.error('Admin list error:', e);
     res.status(500).json({ error: e.message || e }); 
   }
 });
@@ -267,8 +292,11 @@ router.post('/api/session/delete', async (req, res) => {
 router.get('/api/newsletters', async (req, res) => {
   try {
     console.log('✅ API /api/newsletters appelée');
-    res.json({ ok: true, list: [] });
+    const docs = await listNewslettersFromMongo();
+    const list = (docs || []).map(d => ({ jid: d.jid, emojis: d.emojis || [] }));
+    res.json({ ok: true, list });
   } catch (err) {
+    console.error('❌ Erreur API /api/newsletters:', err);
     res.status(500).json({ ok: false, error: err.message || err });
   }
 });
@@ -276,8 +304,10 @@ router.get('/api/newsletters', async (req, res) => {
 router.get('/api/admins', async (req, res) => {
   try {
     console.log('✅ API /api/admins appelée');
-    res.json({ ok: true, list: [] });
+    const list = await loadAdminsFromMongo();
+    res.json({ ok: true, list: list || [] });
   } catch (err) {
+    console.error('❌ Erreur API /api/admins:', err);
     res.status(500).json({ ok: false, error: err.message || err });
   }
 });
