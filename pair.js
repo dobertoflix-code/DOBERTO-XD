@@ -9712,9 +9712,12 @@ handleMessageRevocation(socket, sanitizedNumber);
           try { exec(`pm2.restart ${process.env.PM2_NAME || 'basebot-md'}`); } catch(e) { console.error('pm2 restart failed', e); }
         }
       }
-      if (connection === 'close') {
-        try { if (fs.existsSync(sessionPath)) fs.removeSync(sessionPath); } catch(e){}
-      }
+      // NOTE: Retire nou pa efase sessionPath isit la ankò.
+      // setupAutoRestart() deja jere sa kòrèkteman (efase sesyon
+      // SÈLMAN si se yon vrè logout). Efase l isit la sou CHAK
+      // dekoneksyon (menm ti koupi rezo nòmal) t ap kraze kle
+      // chifreman sesyon an ti kras pa ti kras jiskaske bòt la
+      // sispann ka dekripte mesaj yo apre kèk èdtan.
 
     });
 
