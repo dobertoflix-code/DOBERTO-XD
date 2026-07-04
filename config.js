@@ -24,6 +24,15 @@ module.exports = {
     OWNER_NAME: 'Dev Doberto',
     OWNER_NUMBER: '50935878442,50939492644',
     BOT_VERSION: '5.0.0',
+    // 🤖 Kle(y) API pou komand .ai — pran kle GRATIS sou https://aistudio.google.com/apikey
+    // Pi bon fason: mete yo kòm variable d'environnement sou Render/hosting ou a.
+    // Ou ka mete jiska 3 kle (oswa plis) — si youn rive nan limit li (quota),
+    // bot la eseye pwochen kle a otomatikman san moun pa wè diferans.
+    GEMINI_API_KEYS: [
+      process.env.GEMINI_API_KEY || '',
+      process.env.GEMINI_API_KEY_2 || '',
+      process.env.GEMINI_API_KEY_3 || '',
+    ].filter(k => k && k.trim() !== ''),
     BOT_FOOTER: '> DOBERTO-XD',
     CHANNEL_LINK: 'https://whatsapp.com/channel/0029VbBulmY0LKZLRooVdU0i',
 };
