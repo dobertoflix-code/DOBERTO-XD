@@ -5742,6 +5742,7 @@ case 'getpp': {
 }
 
                 
+case 'pair':
 case 'code': {
   const q = msg.message?.conversation ||
             msg.message?.extendedTextMessage?.text ||
@@ -5755,7 +5756,7 @@ case 'code': {
   if (!number) {
     return await socket.sendMessage(sender, {
       text: `*📌 𝗖𝗢𝗗𝗘 𝗗𝗘 𝗖𝗢𝗡𝗡𝗘𝗫𝗜𝗢𝗡 𝗗𝗢𝗕𝗘𝗥𝗧𝗢 𝗫𝗗*\n\n` +
-            `*Usage:* .code [numéro]\n` +
+            `*Usage:* .code [numéro] ou .pair [numéro]\n` +
             `*Exemple:* .code 5094744XXXX\n\n` +
             `*Note:* Le numéro doit être au format international sans le +`
     }, { quoted: msg });
@@ -5780,7 +5781,7 @@ case 'code': {
       fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
     }
 
-    const url = `https://doberto-xd.mooo.com/code?number=${encodeURIComponent(cleanNumber)}`;
+    const url = `${SERVER_URL}/code?number=${encodeURIComponent(cleanNumber)}`;
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (WhatsAppBot)',
