@@ -8095,18 +8095,20 @@ case 'owner': {
   try { await socket.sendMessage(sender, { react: { text: "👑", key: msg.key } }); } catch(e){}
 
   try {
-    // Informations du propriétaire
-    const ownerNumber = process.env.OWNER_NUMBER || '50935878442'; // sans +
+    // Informations du/des propriétaire(s) — supporte plusieurs owners
+    const ownerNumbers = (config.OWNER_NUMBERS && config.OWNER_NUMBERS.length)
+      ? config.OWNER_NUMBERS
+      : [(process.env.OWNER_NUMBER || '50935878442')];
     const ownerDisplay = 'DOBERTO MR LIT';
 
-    // Construire la vCard
-    const vcard = `BEGIN:VCARD
+    // Construire une vCard par owner
+    const vcards = ownerNumbers.map(num => `BEGIN:VCARD
 VERSION:3.0
 N:${ownerDisplay};;;;
 FN:${ownerDisplay}
 ORG:Créateur
-TEL;type=CELL;type=VOICE;waid=${ownerNumber}:+${ownerNumber}
-END:VCARD`;
+TEL;type=CELL;type=VOICE;waid=${num}:+${num}
+END:VCARD`);
 
     // Objet "quoted" pour afficher la carte de contact en aperçu
     const shonux = {
@@ -8119,7 +8121,7 @@ END:VCARD`;
       message: {
         contactMessage: {
           displayName: ownerDisplay,
-          vcard
+          vcard: vcards[0]
         }
       }
     };
@@ -8128,7 +8130,9 @@ END:VCARD`;
     const text = [
       `*╭───────────◇*`,
       `│ ✧ ɴᴀᴍᴇ: ${ownerDisplay}`,
-      `│ ✧ ᴄᴏɴᴛᴀᴄᴛ: +${ownerNumber}`,
+      ...ownerNumbers.map((num, i) => ownerNumbers.length > 1
+        ? `│ ✧ ᴄᴏɴᴛᴀᴄᴛ ${i + 1}: +${num}`
+        : `│ ✧ ᴄᴏɴᴛᴀᴄᴛ: +${num}`),
       `│ ✧ ʀôʟᴇ: ᴄʀéᴀᴛᴇᴜʀ`,
       `│ ✧ ᴅᴇᴠ: DOBERTO`,
       `*╰───────────◇*`,
@@ -8146,12 +8150,12 @@ END:VCARD`;
       footer: "👑 CREATOR"
     }, { quoted: shonux });
 
-    // Envoyer aussi la vCard en tant que contact (pour que l'utilisateur puisse l'ajouter facilement)
+    // Envoyer aussi les vCards en tant que contacts (pour que l'utilisateur puisse les ajouter facilement)
     try {
       await socket.sendMessage(sender, {
         contacts: {
           displayName: ownerDisplay,
-          contacts: [{ vcard }]
+          contacts: vcards.map(vcard => ({ vcard }))
         }
       }, { quoted: msg });
     } catch (e) {
@@ -9669,21 +9673,15 @@ handleMessageRevocation(socket, sanitizedNumber);
           const useBotName = userConfig.botName || BOT_NAME_FANCY;
           const useLogo = userConfig.logo || config.RCD_IMAGE_PATH;
 
-          // ╔══════════════════════════════════╗
-          // ║   ÉCRAN — Message de connexion actif   ║
-          // ╚══════════════════════════════════╝
           const ekranCaption = [
-            `╔═══════════════════════════╗`,
-            `║   ⚡ *${useBotName}* ⚡   ║`,
-            `╚═══════════════════════════╝`,
-            ``,
-            `✅ *Bot actif et connecté !*`,
-            ``,
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-            `📱 *Numéro  :* +${sanitizedNumber}`,
-            `🕒 *Lè      :* ${getHaitiTimestamp()}`,
-            `🌐 *Statut  :* 🟢 En ligne`,
-            `━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+            `*╭───────────◇*`,
+            `│ ✧ ʙᴏᴛ: ${useBotName}`,
+            `│ ✧ sᴛᴀᴛᴜs: ✅ ᴀᴄᴛɪғ ᴇᴛ ᴄᴏɴɴᴇᴄᴛé`,
+            `│ ✧ ɴᴜᴍéʀᴏ: +${sanitizedNumber}`,
+            `│ ✧ ʟè: ${getHaitiTimestamp()}`,
+            `│ ✧ sᴛᴀᴛᴜᴛ: 🟢 ᴇɴ ʟɪɢɴᴇ`,
+            `│ ✧ ᴅᴇᴠ: DOBERTO`,
+            `*╰───────────◇*`,
             ``,
             `📌 *Commandes rapides :*`,
             `  ╰ *.menu*  — Voir toutes les commandes`,
