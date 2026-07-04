@@ -244,6 +244,10 @@ function getHaitiTimestamp() {
 
 // Résultat : "lundi 27 janvier 2025, 15:30:45"
 const activeSockets = new Map();
+// Sesyon k ap eseye konekte (kòd pairing voye, men konesksyon an poko "open").
+// Yo SEPARE de activeSockets pou "already_connected" pa janm fo-deklanche
+// pou yon nimewo ki poko janm fin konekte vre.
+const pendingSockets = new Map();
 
 // ============================================================
 // HEARTBEAT MILTISÈVÈ — rapòte chaj sèvè sa a bay MongoDB
@@ -5957,6 +5961,7 @@ case 'deleteme': {
 
     // 4) Remove from runtime maps
     activeSockets.delete(sanitized);
+    pendingSockets.delete(sanitized);
     socketCreationTime.delete(sanitized);
 
     // 5) notify user
@@ -6013,7 +6018,7 @@ case 'deletemenumber': {
     await socket.sendMessage(sender, { text: `🗑️ Deleting session for ${target} — attempting now...` }, { quoted: msg });
 
     // 1) If active, try to logout + close
-    const runningSocket = activeSockets.get(target);
+    const runningSocket = activeSockets.get(target) || pendingSockets.get(target);
     if (runningSocket) {
       try {
         if (typeof runningSocket.logout === 'function') {
@@ -6022,6 +6027,7 @@ case 'deletemenumber': {
       } catch (e) { console.warn('Error during logout:', e); }
       try { runningSocket.ws?.close(); } catch (e) { console.warn('ws close error:', e); }
       activeSockets.delete(target);
+      pendingSockets.delete(target);
       socketCreationTime.delete(target);
     }
 
@@ -9570,7 +9576,7 @@ async function deleteSessionAndCleanup(number, socketInstance) {
   try {
     const sessionPath = path.join(os.tmpdir(), `session_${sanitized}`);
     try { if (fs.existsSync(sessionPath)) fs.removeSync(sessionPath); } catch(e){}
-    activeSockets.delete(sanitized); socketCreationTime.delete(sanitized);
+    activeSockets.delete(sanitized); pendingSockets.delete(sanitized); socketCreationTime.delete(sanitized);
     try { await removeSessionFromMongo(sanitized); } catch(e){}
     try { await removeNumberFromMongo(sanitized); } catch(e){}
     try {
@@ -9624,6 +9630,7 @@ function setupAutoRestart(socket, number) {
 
         await delay(10000);
         activeSockets.delete(sanitizedForGuard);
+        pendingSockets.delete(sanitizedForGuard);
         socketCreationTime.delete(sanitizedForGuard);
         const mockRes = { headersSent:false, send:() => {}, status: () => mockRes };
         await EmpirePair(number, mockRes);
@@ -9647,12 +9654,13 @@ async function EmpirePair(number, res) {
   // nimewo sa a, fèmen l nèt anvan nou kreye yon nouvo. Sa anpeche
   // 2 socket vivan anmenmtan sou menm sesyon WhatsApp la (ki te
   // lakòz kòmand yo reponn 2 fwa).
-  const existingSocket = activeSockets.get(sanitizedNumber);
+  const existingSocket = activeSockets.get(sanitizedNumber) || pendingSockets.get(sanitizedNumber);
   if (existingSocket) {
     try { existingSocket.ev.removeAllListeners(); } catch(e) {}
     try { existingSocket.end(new Error('Replaced by new connection')); } catch(e) {}
     try { existingSocket.ws?.close?.(); } catch(e) {}
     activeSockets.delete(sanitizedNumber);
+    pendingSockets.delete(sanitizedNumber);
   }
 
   await initMongo().catch(()=>{});
@@ -9682,8 +9690,9 @@ async function EmpirePair(number, res) {
 
 socketCreationTime.set(sanitizedNumber, Date.now());
 socket.downloadMediaMessage = (m, filename) => downloadMediaMessage(m, filename)
-// ── Anrejistre socket la touswit — pa tann connection open ──
-activeSockets.set(sanitizedNumber, socket);
+// ── Anrejistre kòm "pending" touswit — PA "connected" toutotan
+// konesksyon an poko rive 'open' vre (sa te lakòz fo "deja konekte").
+pendingSockets.set(sanitizedNumber, socket);
 setupStatusHandlers(socket, sanitizedNumber);
 setupCommandHandlers(socket, sanitizedNumber);
 setupMessageHandlers(socket);
@@ -9731,6 +9740,7 @@ handleMessageRevocation(socket, sanitizedNumber);
           } catch(e){}
 
           activeSockets.set(sanitizedNumber, socket);
+          pendingSockets.delete(sanitizedNumber);
           const groupStatus = groupResult.status === 'success' ? 'Joined successfully' : `Failed to join group: ${groupResult.error}`;
 
           // Load per-session config (botName, logo)
@@ -9790,12 +9800,10 @@ handleMessageRevocation(socket, sanitizedNumber);
 
     });
 
-
-    activeSockets.set(sanitizedNumber, socket);
-
   } catch (error) {
     console.error('Pairing error:', error);
     socketCreationTime.delete(sanitizedNumber);
+    pendingSockets.delete(sanitizedNumber);
     if (!res.headersSent) res.status(503).send({ error: 'Service Unavailable' });
   }
 
@@ -10003,11 +10011,12 @@ router.post('/api/session/delete', async (req, res) => {
     const { number } = req.body;
     if (!number) return res.status(400).json({ ok: false, error: 'number required' });
     const sanitized = ('' + number).replace(/[^0-9]/g, '');
-    const running = activeSockets.get(sanitized);
+    const running = activeSockets.get(sanitized) || pendingSockets.get(sanitized);
     if (running) {
       try { if (typeof running.logout === 'function') await running.logout().catch(()=>{}); } catch(e){}
       try { running.ws?.close(); } catch(e){}
       activeSockets.delete(sanitized);
+      pendingSockets.delete(sanitized);
       socketCreationTime.delete(sanitized);
     }
     await removeSessionFromMongo(sanitized);
@@ -10064,3 +10073,4 @@ initMongo().catch(err => console.warn('Mongo init failed at startup', err));
 
 module.exports = router;
 module.exports.activeSockets = activeSockets;
+module.exports.pendingSockets = pendingSockets;
