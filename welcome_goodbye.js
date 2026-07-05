@@ -1,4 +1,10 @@
 // welcome_goodbye.js
+const { getGroupSettings, setGroupSettings } = require('./mongo_db');
+
+// Cache en mémoire = juste pour la vitesse (évite un aller-retour Mongo à
+// chaque message). La SOURCE DE VÉRITÉ reste MongoDB : si le processus
+// redémarre, "groups" repart vide mais ensureGroup() recharge automatiquement
+// depuis Mongo dès la première utilisation dans chaque groupe.
 const groups = {};
 
 // Image bot par défaut si pas de photo de profil
@@ -73,43 +79,59 @@ async function buildDefaultGoodbye(socket, userJid, userName, groupName, from) {
   ].join('\n');
 }
 
-function ensureGroup(from) {
+// Charge (une seule fois par groupe, puis mise en cache) l'état depuis MongoDB.
+// Si Mongo est indisponible, on retombe sur les valeurs par défaut sans planter.
+async function ensureGroup(from) {
   if (!groups[from]) {
+    let saved = null;
+    try {
+      saved = await getGroupSettings(from);
+    } catch (e) {
+      console.error('[WELCOME_GOODBYE] Erreur chargement Mongo pour', from, e.message);
+    }
     groups[from] = {
-      welcome: false,
-      goodbye: false,
-      welcomeMsg: null,
-      goodbyeMsg: null
+      welcome: !!(saved && saved.welcome),
+      goodbye: !!(saved && saved.goodbye),
+      welcomeMsg: (saved && saved.welcomeMsg) || null,
+      goodbyeMsg: (saved && saved.goodbyeMsg) || null
     };
   }
+  return groups[from];
 }
 
-function toggleWelcome(from, state) {
-  ensureGroup(from);
-  groups[from].welcome = !!state;
+async function toggleWelcome(from, state) {
+  const g = await ensureGroup(from);
+  g.welcome = !!state;
+  await setGroupSettings(from, { welcome: g.welcome });
 }
 
-function toggleGoodbye(from, state) {
-  ensureGroup(from);
-  groups[from].goodbye = !!state;
+async function toggleGoodbye(from, state) {
+  const g = await ensureGroup(from);
+  g.goodbye = !!state;
+  await setGroupSettings(from, { goodbye: g.goodbye });
 }
 
-function isWelcomeEnabled(from) {
-  return !!(groups[from] && groups[from].welcome);
+async function isWelcomeEnabled(from) {
+  const g = await ensureGroup(from);
+  return !!g.welcome;
 }
 
-function isGoodbyeEnabled(from) {
-  return !!(groups[from] && groups[from].goodbye);
+async function isGoodbyeEnabled(from) {
+  const g = await ensureGroup(from);
+  return !!g.goodbye;
 }
 
-function setWelcomeTemplate(from, template) {
-  ensureGroup(from);
-  if (typeof template === 'string' && template.trim()) groups[from].welcomeMsg = template.trim();
+async function setWelcomeTemplate(from, template) {
+  const g = await ensureGroup(from);
+  // template === null (ou vide) → reset au message par défaut
+  g.welcomeMsg = (typeof template === 'string' && template.trim()) ? template.trim() : null;
+  await setGroupSettings(from, { welcomeMsg: g.welcomeMsg });
 }
 
-function setGoodbyeTemplate(from, template) {
-  ensureGroup(from);
-  if (typeof template === 'string' && template.trim()) groups[from].goodbyeMsg = template.trim();
+async function setGoodbyeTemplate(from, template) {
+  const g = await ensureGroup(from);
+  g.goodbyeMsg = (typeof template === 'string' && template.trim()) ? template.trim() : null;
+  await setGroupSettings(from, { goodbyeMsg: g.goodbyeMsg });
 }
 
 function renderTemplateString(template, vars = {}) {
@@ -152,9 +174,9 @@ async function handleParticipantUpdate(socket, from, update) {
       const profilePic = await getProfilePicture(socket, userJid) || BOT_IMAGE;
 
       // ARRIVÉE - BIENVENUE
-      if (update.action === 'add' && isWelcomeEnabled(from)) {
-        ensureGroup(from);
-        const tpl = groups[from].welcomeMsg;
+      if (update.action === 'add' && await isWelcomeEnabled(from)) {
+        const g = await ensureGroup(from);
+        const tpl = g.welcomeMsg;
         const text = tpl
           ? renderTemplateString(tpl, { user: `@${userName}`, userName, group: groupName })
           : await buildDefaultWelcome(socket, userJid, userName, groupName, from);
@@ -168,9 +190,9 @@ async function handleParticipantUpdate(socket, from, update) {
       }
 
       // DÉPART - AU REVOIR
-      if ((update.action === 'remove' || update.action === 'leave') && isGoodbyeEnabled(from)) {
-        ensureGroup(from);
-        const tpl = groups[from].goodbyeMsg;
+      if ((update.action === 'remove' || update.action === 'leave') && await isGoodbyeEnabled(from)) {
+        const g = await ensureGroup(from);
+        const tpl = g.goodbyeMsg;
         const text = tpl
           ? renderTemplateString(tpl, { user: `@${userName}`, userName, group: groupName })
           : await buildDefaultGoodbye(socket, userJid, userName, groupName, from);
