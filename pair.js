@@ -5429,6 +5429,7 @@ case 'ad': {
     break;
 }
             // ============ FORWARD/RETURN VOICE ============
+case 'vv':
 case 'readviewonce': {
   try {
     // Récupération du message cité (même logique que tovn)
