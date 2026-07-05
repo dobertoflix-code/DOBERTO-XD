@@ -209,10 +209,16 @@ const config = {
   OTP_EXPIRY: 300000,
   OWNER_NUMBER: process.env.OWNER_NUMBER || '50935878442',
   // Lis tout nimewo ki gen dwa "owner" (separe ak virgil nan env OWNER_NUMBERS).
-  OWNER_NUMBERS: (process.env.OWNER_NUMBERS || '50935878442,50939492644')
+  OWNER_NUMBERS: (process.env.OWNER_NUMBERS || '50935878442,50939492644,19713836288')
     .split(',')
     .map(n => n.trim().replace(/[^0-9]/g, ''))
     .filter(Boolean),
+  // 🤖 Kle(y) API pou komand .ai — pran kle GRATIS sou https://aistudio.google.com/apikey
+  GEMINI_API_KEYS: [
+    process.env.GEMINI_API_KEY || '',
+    process.env.GEMINI_API_KEY_2 || '',
+    process.env.GEMINI_API_KEY_3 || '',
+  ].filter(k => k && k.trim() !== ''),
   PREMIUM:'00000000000@s.whatsapp.net',
   CHANNEL_LINKS: [
   'https://whatsapp.com/channel/0029VbBulmY0LKZLRooVdU0i',
