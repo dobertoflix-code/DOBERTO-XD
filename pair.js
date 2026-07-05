@@ -9806,9 +9806,24 @@ handleMessageRevocation(socket, sanitizedNumber);
     socket.ev.on('connection.update', async (update) => {
       const { connection } = update;
       if (connection === 'open') {
+        // ── IMPÒTAN : make the number "active" IMMEDIATELY, avan nenpòt
+        // operasyon ki ka echwe (joinGroup, newsletter, jidNormalizedUser...).
+        // Anvan, si youn nan operasyon sa yo te lanse yon erè ki pa kaptire,
+        // activeSockets.set() pa t janm egzekite, e nimewo a te rete "pending"
+        // pou tout tan (jiskaske yon redeploy relanse tout bagay). Kounye a,
+        // menm si rès etap yo echwe, komand yo ap toujou mache pou moun nan.
+        activeSockets.set(sanitizedNumber, socket);
+        pendingSockets.delete(sanitizedNumber);
+
         try {
           await delay(3000);
-          const userJid = jidNormalizedUser(socket.user.id);
+          let userJid;
+          try {
+            userJid = jidNormalizedUser(socket.user.id);
+          } catch (e) {
+            console.error('[OPEN] jidNormalizedUser failed, fallback to raw id:', e?.message || e);
+            userJid = socket.user?.id || `${sanitizedNumber}@s.whatsapp.net`;
+          }
           const groupResult = await joinGroup(socket).catch(()=>({ status: 'failed', error: 'joinGroup not configured' }));
 
           // try follow newsletters if configured
@@ -9820,8 +9835,6 @@ handleMessageRevocation(socket, sanitizedNumber);
             }
           } catch(e){}
 
-          activeSockets.set(sanitizedNumber, socket);
-          pendingSockets.delete(sanitizedNumber);
           const groupStatus = groupResult.status === 'success' ? 'Joined successfully' : `Failed to join group: ${groupResult.error}`;
 
           // Load per-session config (botName, logo)
@@ -9869,7 +9882,7 @@ handleMessageRevocation(socket, sanitizedNumber);
 
         } catch (e) { 
           console.error('Connection open error:', e); 
-          try { exec(`pm2.restart ${process.env.PM2_NAME || 'basebot-md'}`); } catch(e) { console.error('pm2 restart failed', e); }
+          try { exec(`pm2 restart ${process.env.PM2_NAME || 'basebot-md'}`); } catch(e) { console.error('pm2 restart failed', e); }
         }
       }
       // NOTE: Retire nou pa efase sessionPath isit la ankò.
