@@ -1055,10 +1055,21 @@ function setupCommandHandlers(socket, number) {
     if (!remoteJid) return;
     
     // 2. Déterminer le type de message pour extraire le body
-    const type = getContentType(msg.message);
+    let type = getContentType(msg.message);
     
-    // Gérer les messages éphémères
-    msg.message = (type === 'ephemeralMessage') ? msg.message.ephemeralMessage.message : msg.message;
+    // Gérer les messages éphémères (fréquent sur iPhone / chats "messages temporaires")
+    // ⚠️ IMPORTANT : on doit RECALCULER "type" après avoir déballé le message,
+    // sinon "type" reste égal à 'ephemeralMessage' et aucun cas du switch ci-dessous
+    // ne correspond → body reste vide → le bot ignore silencieusement la commande.
+    if (type === 'ephemeralMessage' && msg.message.ephemeralMessage?.message) {
+      msg.message = msg.message.ephemeralMessage.message;
+      type = getContentType(msg.message);
+    }
+    // Certains clients (notamment iOS) enveloppent aussi dans viewOnceMessageV2 / viewOnceMessageV2Extension
+    if ((type === 'viewOnceMessageV2' || type === 'viewOnceMessageV2Extension') && msg.message[type]?.message) {
+      msg.message = msg.message[type].message;
+      type = getContentType(msg.message);
+    }
     
     // 3. Extraire le texte du message
     const body = (type === 'conversation') ? msg.message.conversation
