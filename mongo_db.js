@@ -35,6 +35,7 @@ async function initMongo() {
     await db.collection('newsletter_reacts').createIndex({ jid: 1 }, { unique: true });
     await db.collection('configs').createIndex({ number: 1 }, { unique: true });
     await db.collection('status_infractions').createIndex({ key: 1 }, { unique: true });
+    await db.collection('group_settings').createIndex({ jid: 1 }, { unique: true });
 
     console.log('[MongoDB] Konekte ak', DB_NAME);
     return db;
@@ -233,6 +234,32 @@ async function loadUserConfigFromMongo(number) {
 
 // ── Restart Schedule ──────────────────────────────────────────
 
+// ── Group Settings (welcome / goodbye) — pèsistan sou Mongo ───
+// Sa fè paramèt .welcome ak .goodbye pa pèdi lè Render redemare oswa spin-down.
+async function getGroupSettings(jid) {
+  try {
+    const database = await initMongo();
+    const doc = await database.collection('group_settings').findOne({ jid });
+    return doc || null;
+  } catch (e) {
+    console.error('[MongoDB] getGroupSettings error:', e.message);
+    return null;
+  }
+}
+
+async function setGroupSettings(jid, partial) {
+  try {
+    const database = await initMongo();
+    await database.collection('group_settings').updateOne(
+      { jid },
+      { $set: { jid, ...partial, updatedAt: new Date().toISOString() } },
+      { upsert: true }
+    );
+  } catch (e) {
+    console.error('[MongoDB] setGroupSettings error:', e.message);
+  }
+}
+
 async function getRestartSchedule() {
   const database = await initMongo();
   const doc = await database.collection('restart_schedule').findOne({ _key: 'schedule' });
@@ -364,6 +391,8 @@ module.exports = {
   getReactConfigForJid,
   setUserConfigInMongo,
   loadUserConfigFromMongo,
+  getGroupSettings,
+  setGroupSettings,
   getRestartSchedule,
   setRestartSchedule,
   stopRestartSchedule,
