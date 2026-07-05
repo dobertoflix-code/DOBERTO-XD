@@ -3501,13 +3501,13 @@ case 'welcome': {
     const sub = (args[0] || '').toLowerCase();
     // .welcome on | off | status | set <message> | reset
     if (sub === 'on') {
-      toggleWelcome(from, true);
+      await toggleWelcome(from, true);
       await socket.sendMessage(from, { text: '✅ Mode Welcome activé.' }, { quoted: msg });
     } else if (sub === 'off') {
-      toggleWelcome(from, false);
+      await toggleWelcome(from, false);
       await socket.sendMessage(from, { text: '❌ Mode Welcome désactivé.' }, { quoted: msg });
     } else if (sub === 'status') {
-      const state = isWelcomeEnabled(from) ? 'activé ✅' : 'désactivé ❌';
+      const state = (await isWelcomeEnabled(from)) ? 'activé ✅' : 'désactivé ❌';
       await socket.sendMessage(from, { text: `ℹ️ Le mode Welcome est actuellement ${state}.` }, { quoted: msg });
     } else if (sub === 'set') {
       // .welcome set Ton message {user} {group}
@@ -3516,10 +3516,10 @@ case 'welcome': {
         await socket.sendMessage(from, { text: `❗ Fournis le message après ${prefix}welcome set\nEx: ${prefix}welcome set Bienvenue {user} dans {group} !` }, { quoted: msg });
         break;
       }
-      setWelcomeTemplate(from, template);
+      await setWelcomeTemplate(from, template);
       await socket.sendMessage(from, { text: '✅ Message de bienvenue personnalisé enregistré.' }, { quoted: msg });
     } else if (sub === 'reset') {
-      setWelcomeTemplate(from, null);
+      await setWelcomeTemplate(from, null);
       await socket.sendMessage(from, { text: '♻️ Message de bienvenue réinitialisé au thème BaseBot par défaut.' }, { quoted: msg });
     } else {
       // aide rapide
@@ -3552,13 +3552,13 @@ case 'goodbye': {
     const sub = (args[0] || '').toLowerCase();
     // .goodbye on | off | status | set <message> | reset
     if (sub === 'on') {
-      toggleGoodbye(from, true);
+      await toggleGoodbye(from, true);
       await socket.sendMessage(from, { text: '✅ Mode Goodbye activé.' }, { quoted: msg });
     } else if (sub === 'off') {
-      toggleGoodbye(from, false);
+      await toggleGoodbye(from, false);
       await socket.sendMessage(from, { text: '❌ Mode Goodbye désactivé.' }, { quoted: msg });
     } else if (sub === 'status') {
-      const state = isGoodbyeEnabled(from) ? 'activé ✅' : 'désactivé ❌';
+      const state = (await isGoodbyeEnabled(from)) ? 'activé ✅' : 'désactivé ❌';
       await socket.sendMessage(from, { text: `ℹ️ Le mode Goodbye est actuellement ${state}.` }, { quoted: msg });
     } else if (sub === 'set') {
       // .goodbye set Ton message {user} {group}
@@ -3567,10 +3567,10 @@ case 'goodbye': {
         await socket.sendMessage(from, { text: `❗ Fournis le message après ${prefix}goodbye set\nEx: ${prefix}goodbye set Au revoir {user}, bon vent !` }, { quoted: msg });
         break;
       }
-      setGoodbyeTemplate(from, template);
+      await setGoodbyeTemplate(from, template);
       await socket.sendMessage(from, { text: '✅ Message d\'au revoir personnalisé enregistré.' }, { quoted: msg });
     } else if (sub === 'reset') {
-      setGoodbyeTemplate(from, null);
+      await setGoodbyeTemplate(from, null);
       await socket.sendMessage(from, { text: '♻️ Message d\'au revoir réinitialisé au thème BaseBot par défaut.' }, { quoted: msg });
     } else {
       // aide rapide
